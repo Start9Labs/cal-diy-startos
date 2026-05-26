@@ -84,32 +84,39 @@ export const resetPassword = sdk.Action.withInput(
     const safeEmail = input.email.replace(/'/g, "''")
     const safeHash = hash.replace(/'/g, "''")
 
-    const sql = `\\set ON_ERROR_STOP 1
-WITH target AS (SELECT id FROM "User" WHERE email = '${safeEmail}' LIMIT 1)
-INSERT INTO "UserPassword" (hash, "userId")
-SELECT '${safeHash}', id FROM target
-ON CONFLICT ("userId") DO UPDATE SET hash = EXCLUDED.hash
-RETURNING "userId";`
-
-    let updatedUserId = ''
+    // Cal.com's Prisma User model is @@map'd to the table "users" (lowercase
+    // plural). UserPassword has no @@map so it's PascalCase. Don't mix them up.
+    // Look up the user first; the upsert by itself with a CTE silently
+    // succeeds when the email doesn't match anything.
+    let userId = ''
     await sdk.SubContainer.withTemp(
       effects,
       { imageId: 'postgres' },
       sdk.Mounts.of(),
       'cal-reset-password',
       async (sub) => {
-        const result = await sub.execFail([
+        const psqlBase = `PGPASSWORD='${postgresPassword}' psql -h 127.0.0.1 -U ${postgresUser} -d ${postgresDb} -At -v ON_ERROR_STOP=1`
+
+        const lookup = await sub.execFail([
           'sh',
           '-c',
-          `PGPASSWORD='${postgresPassword}' psql -h 127.0.0.1 -U ${postgresUser} -d ${postgresDb} -At -v ON_ERROR_STOP=1 <<'SQL_EOF'
-${sql}
+          `${psqlBase} -c "SELECT id FROM \\"users\\" WHERE email = '${safeEmail}' LIMIT 1;"`,
+        ])
+        userId = (lookup.stdout as string).trim()
+        if (!userId) return
+
+        await sub.execFail([
+          'sh',
+          '-c',
+          `${psqlBase} <<'SQL_EOF'
+INSERT INTO "UserPassword" (hash, "userId") VALUES ('${safeHash}', ${userId})
+ON CONFLICT ("userId") DO UPDATE SET hash = EXCLUDED.hash;
 SQL_EOF`,
         ])
-        updatedUserId = (result.stdout as string).trim()
       },
     )
 
-    if (!updatedUserId) {
+    if (!userId) {
       throw new Error(
         i18n('No Cal.diy user found with email ${email}', {
           email: input.email,

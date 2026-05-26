@@ -28,13 +28,37 @@ export const main = sdk.setupMain(async ({ effects }) => {
     const customFrom = store.smtp.value.customFrom as string | undefined
     if (smtpCredentials && customFrom) smtpCredentials.from = customFrom
   } else if (store.smtp?.selection === 'custom') {
-    smtpCredentials = store.smtp.value as unknown as T.SmtpValue
+    // Custom SMTP stores the credentials nested under provider.value, not flat
+    // like T.SmtpValue. Extract and flatten before mapping to env vars.
+    const v = (store.smtp.value as unknown as { provider?: { value?: any } })
+      ?.provider?.value
+    if (v?.host && v?.from) {
+      const port = parseInt(v.security?.value?.port ?? '587', 10)
+      smtpCredentials = {
+        host: v.host,
+        port: Number.isFinite(port) ? port : 587,
+        from: v.from,
+        username: v.username ?? '',
+        password: v.password ?? null,
+        security: v.security?.selection ?? 'starttls',
+      } as T.SmtpValue
+    }
   }
 
   const smtpEnv: Record<string, string> = {}
-  if (smtpCredentials) {
-    smtpEnv.EMAIL_FROM = smtpCredentials.from
-    smtpEnv.EMAIL_FROM_NAME = 'Cal.diy'
+  if (smtpCredentials?.host && smtpCredentials?.from) {
+    // cal.com always formats outbound `from` as `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`.
+    // If the user's `from` is already a `Name <email>` string, EMAIL_FROM
+    // would double-wrap (`Cal.com <Cal.diy <user@example.com>>`). Split it
+    // so EMAIL_FROM is always the bare address.
+    const match = smtpCredentials.from.match(/^\s*(.*?)\s*<\s*([^>]+?)\s*>\s*$/)
+    if (match) {
+      const [, name, email] = match
+      smtpEnv.EMAIL_FROM = email
+      if (name) smtpEnv.EMAIL_FROM_NAME = name
+    } else {
+      smtpEnv.EMAIL_FROM = smtpCredentials.from
+    }
     smtpEnv.EMAIL_SERVER_HOST = smtpCredentials.host
     smtpEnv.EMAIL_SERVER_PORT = String(smtpCredentials.port)
     if (smtpCredentials.username) {
@@ -44,6 +68,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       smtpEnv.EMAIL_SERVER_PASSWORD = smtpCredentials.password
     }
   }
+  const smtpReady = !!smtpEnv.EMAIL_SERVER_HOST
 
   const postgresSub = await sdk.SubContainer.of(
     effects,
@@ -148,7 +173,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       ready: {
         display: i18n('Email Delivery'),
         fn: async () =>
-          smtpCredentials
+          smtpReady
             ? {
                 result: 'success',
                 message: i18n('SMTP configured — Cal.diy can send email.'),
