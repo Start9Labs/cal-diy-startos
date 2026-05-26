@@ -22,6 +22,7 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
       nextAuthSecret,
       calendsoEncryptionKey,
       smtp: { selection: 'disabled', value: {} },
+      signupDisabled: false,
     })
   } else {
     await storeJson.merge(effects, {})

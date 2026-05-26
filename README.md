@@ -81,6 +81,7 @@ Once the **Web Interface** health check turns green, open the **Web UI** from th
 | `NEXT_PUBLIC_WEBAPP_URL`, `NEXT_PUBLIC_WEBSITE_URL` (sourced from the "Set Primary URL" action) |  |
 | `BUILT_NEXT_PUBLIC_WEBAPP_URL` (fixed at `http://localhost:3000` to match the upstream bake-time value, so `replace-placeholder.sh` can do its job) | |
 | `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` (sourced from the "Configure SMTP" action) | |
+| `NEXT_PUBLIC_DISABLE_SIGNUP` (sourced from the "Enable/Disable Signups" action) | |
 | `CALCOM_TELEMETRY_DISABLED=1`, `NEXT_TELEMETRY_DISABLED=1` | |
 | `NODE_ENV=production`                    |                                                             |
 
@@ -103,12 +104,14 @@ Once the **Web Interface** health check turns green, open the **Web UI** from th
 
 ## Actions (StartOS UI)
 
-| Name              | ID                | Visibility | Purpose                                                                                                                                                                                                                                                            |
-| ----------------- | ----------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Set Primary URL   | `set-primary-url` | Enabled    | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start. |
-| Configure SMTP    | `manage-smtp`     | Enabled    | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                              |
+| Name                   | ID                | Availability   | Purpose                                                                                                                                                                                                                                                            |
+| ---------------------- | ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Set Primary URL        | `set-primary-url` | Any status     | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start. |
+| Configure SMTP         | `manage-smtp`     | Any status     | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                              |
+| Enable/Disable Signups | `toggle-signup`   | Only running   | Toggles new account creation on the instance. Sets `NEXT_PUBLIC_DISABLE_SIGNUP` on the daemon (server-rendered signup page + signup API both honour it) and upserts the `disable-signup` row in Cal.diy's `Feature` table for belt-and-suspenders enforcement. The vestigial "Create Account" link in the login footer is baked into the client bundle and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error. |
+| Reset User Password    | `reset-password`  | Only running   | Generates a 22-character random password, hashes it with `bcryptjs` (cost 12) inside a temp container of the `main` image, and upserts it into the `UserPassword` row joined to `User.email`. Surfaces the new password back to the StartOS UI as a masked, copyable single-value result. |
 
-A `taskSetPrimaryUrl` init task pre-selects a `.local` URL on first install and re-prompts the user (as a critical task) if the chosen URL later becomes unavailable.
+A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and re-prompts the user (as a critical task) if the chosen URL later becomes unavailable.
 
 ---
 
@@ -147,8 +150,9 @@ None.
 1. **No public REST API.** Upstream's optional `apps/api/v2` service (NestJS + Redis) is not packaged. The web UI, tRPC, and integrations all work; programmatic access via the public `/api/v2` REST endpoints does not.
 2. **No enterprise features.** Cal.diy upstream has removed Teams, Organizations, Insights, Workflows, SSO/SAML, and other commercial features that exist in Cal.com. None of them are available here either.
 3. **Static URL rewrite on each start.** When the primary URL differs from the baked-in `http://localhost:3000`, the upstream `replace-placeholder.sh` rewrites the entire `.next/` directory on every container start. Expect tens of seconds of extra startup time after a URL change.
-4. **`NEXT_PUBLIC_DISABLE_SIGNUP` is not exposed as an action** because it is a `NEXT_PUBLIC_*` value baked into the static build; a runtime toggle would require an additional `replace-placeholder.sh` pass and is not implemented in this release.
-5. **Telemetry is disabled** via `CALCOM_TELEMETRY_DISABLED=1` and `NEXT_TELEMETRY_DISABLED=1`.
+4. **Disabling signups leaves a vestigial UI link.** The "Create Account" link in the login page footer is baked into the static client bundle via `process.env.NEXT_PUBLIC_DISABLE_SIGNUP` and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error page. The signup API route and server-rendered signup page both block correctly.
+5. **Reset User Password only resets the local password.** Users who sign in via OAuth providers (Google, Microsoft, etc.) do not have a row in `UserPassword`; the action upserts a hash for them but those users still authenticate via OAuth and the hash is ignored.
+6. **Telemetry is disabled** via `CALCOM_TELEMETRY_DISABLED=1` and `NEXT_TELEMETRY_DISABLED=1`.
 
 ---
 
@@ -195,10 +199,13 @@ startos_managed_env_vars:
   - EMAIL_SERVER_PORT
   - EMAIL_SERVER_USER
   - EMAIL_SERVER_PASSWORD
+  - NEXT_PUBLIC_DISABLE_SIGNUP
   - CALCOM_TELEMETRY_DISABLED
   - NEXT_TELEMETRY_DISABLED
   - NODE_ENV
 actions:
   - set-primary-url
   - manage-smtp
+  - toggle-signup
+  - reset-password
 ```

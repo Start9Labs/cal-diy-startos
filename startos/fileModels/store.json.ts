@@ -7,6 +7,7 @@ const shape = z.object({
   calendsoEncryptionKey: z.string().optional().catch(undefined),
   url: z.string().optional().catch(undefined),
   smtp: smtpShape,
+  signupDisabled: z.boolean().catch(false),
 })
 
 export const storeJson = FileHelper.json(

@@ -31,6 +31,27 @@ const dict = {
 
   // init/taskSetPrimaryUrl.ts
   'Primary URL is no longer available. Select a new one.': 20,
+
+  // actions/resetPassword.ts
+  Email: 21,
+  'The email address of the Cal.diy user whose password to reset.': 22,
+  'Reset User Password': 23,
+  'Generate a new random password for the Cal.diy user with the given email and store it directly in the database. Useful if a user has lost their password and SMTP-based recovery is unavailable.': 24,
+  'Use only for accounts that authenticate via password. Users who sign in exclusively via OAuth (Google, Microsoft, etc.) do not have a stored password and resetting it here will have no effect.': 25,
+  'Password hashing failed': 26,
+  'Database password not found in store.json': 27,
+  'No Cal.diy user found with email ${email}': 28,
+  'Password Reset': 29,
+  'The password for ${email} has been reset. Use the new password below to log in.': 30,
+  'New Password': 31,
+
+  // actions/toggleSignup.ts
+  'Enable Signups': 32,
+  'Disable Signups': 33,
+  'Signups are currently disabled. Run this action to allow new account creation on your Cal.diy instance.': 34,
+  'Signups are currently enabled. Run this action to prevent new account creation. Existing users are unaffected; only new signups are blocked.': 35,
+  'Anyone who can reach this Cal.diy instance will be able to create an account. Only re-enable if you intend to invite new users.': 36,
+  'A vestigial "Create Account" link will still render in the login page footer (it is baked into the static JavaScript bundle at upstream build time), but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.': 37,
 } as const
 
 /**

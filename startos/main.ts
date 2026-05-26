@@ -20,6 +20,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const nextAuthSecret = store.nextAuthSecret ?? ''
   const calendsoEncryptionKey = store.calendsoEncryptionKey ?? ''
   const webappUrl = store.url ?? builtWebappUrl
+  const signupDisabled = store.signupDisabled ?? false
 
   let smtpCredentials: T.SmtpValue | null = null
   if (store.smtp?.selection === 'system') {
@@ -112,6 +113,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
           NEXT_PUBLIC_WEBAPP_URL: webappUrl,
           NEXT_PUBLIC_WEBSITE_URL: webappUrl,
           BUILT_NEXT_PUBLIC_WEBAPP_URL: builtWebappUrl,
+          NEXT_PUBLIC_DISABLE_SIGNUP: signupDisabled ? 'true' : '',
           CALCOM_TELEMETRY_DISABLED: '1',
           NEXT_TELEMETRY_DISABLED: '1',
           NODE_ENV: 'production',
