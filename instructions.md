@@ -12,16 +12,22 @@ You've installed Cal.diy — the community-driven, fully open-source edition of 
 
 - A complete, self-hosted Cal.diy instance — the Next.js web app and a private PostgreSQL database, packaged together so there is no external service to configure.
 - StartOS generates the required secrets (database password, NextAuth session secret, and the symmetric encryption key Cal.diy uses to protect stored integration credentials) at install time. You never need to write them down.
-- The Web UI is exposed on port 3000 and reachable over LAN, `.local`, Tor, or any custom domain you add to the package.
+- A **Set Primary URL** action lets you tell Cal.diy which of its URLs (LAN IP, `.local`, Tor, or a custom domain you've added) to use for booking links, magic-link sign-in, and email content. The package pre-selects your `.local` URL on install so it works on the LAN immediately.
+- A **Configure SMTP** action lets you supply (or borrow from StartOS) the SMTP credentials Cal.diy needs to send booking confirmations, reminders, and magic-link sign-in messages.
 - Telemetry is disabled.
 
 ## Getting set up
 
 1. Open Cal.diy's **Dashboard** tab and click the **Web UI** interface to open the web app.
-2. The first time you open it, Cal.diy will spend a minute or two running database migrations and seeding the bundled app store. The Web Interface health check will turn green once it's ready — if you opened the page before that, just refresh.
-3. Create your administrator account on the signup screen. Cal.diy does not skip its own onboarding — fill in the basic profile, set your time zone, and pick your default working hours.
-4. (Optional but recommended) Add a custom domain to the Web UI interface in StartOS if you intend to share booking links publicly. Booking confirmation emails and other absolute links Cal.diy generates point at the URL baked into the build — they will work correctly when your booking page is served over a stable, public address.
-5. (Optional) From the Cal.diy settings, configure SMTP (so booking emails go out from your own address) and connect any calendar or video integrations you want. You provide the upstream OAuth credentials for each integration; this package does not ship pre-filled keys for any third-party service.
+2. The first time you open it, Cal.diy will spend a couple of minutes running database migrations and seeding the bundled app store. The Web Interface health check turns green once it's ready — refresh the page if you opened it before that.
+3. Create your administrator account on the Cal.diy signup screen. Fill in your basic profile, set your time zone, and pick your default working hours.
+4. Run the **Set Primary URL** action and choose the URL you want Cal.diy to treat as canonical. Use:
+   - Your `.local` URL if Cal.diy is just for you and people on the same LAN.
+   - A custom domain you've added to the Web UI interface in StartOS if you want booking links to work over the public internet.
+   - The Tor `.onion` URL if you're sharing inside the Tor network.
+   The service will restart after you set this; on the next start, Cal.diy rewrites its statically-baked URLs to match — expect tens of seconds of extra startup time.
+5. Run the **Configure SMTP** action and either pick **System SMTP** (if you've set up SMTP in StartOS itself) or **Custom** and provide your own SMTP host, port, username, password, and "from" address. Without this, Cal.diy can run, but it cannot send booking confirmation emails or magic-link sign-in messages.
+6. (Optional) Inside Cal.diy's settings, connect any calendar or video integrations you want — Google, Apple, Microsoft, Zoom, Daily, and so on. You provide the upstream OAuth credentials for each integration; this package does not ship pre-filled keys for any third-party service.
 
 ## Using Cal.diy
 
@@ -29,9 +35,16 @@ You've installed Cal.diy — the community-driven, fully open-source edition of 
 
 The Web UI is the full Cal.diy app — your scheduling dashboard, event-type editor, availability settings, integrations, booking pages, and admin console all live here. After signup you'll land on the dashboard; share the URL shown under your name as your personal booking link.
 
+### Actions
+
+- **Set Primary URL** — change which URL Cal.diy uses for outbound links. Run it after adding a custom domain in StartOS, or after you decide to expose Cal.diy over Tor instead of the LAN. Restarts the service.
+- **Configure SMTP** — set, change, or disable outbound email. Run it to enable booking emails, or to swap from your own SMTP provider to StartOS system SMTP (or vice versa).
+
+If the URL you previously selected becomes unavailable (for example, because you removed a custom domain), StartOS will surface a critical task asking you to pick a new one. Run **Set Primary URL** to clear it.
+
 ## Limitations
 
 - The public REST API service (Cal's optional `apps/api/v2`) is not included. The Web UI and tRPC endpoints work; programmatic access through the public `/api/v2` REST surface does not.
 - Cal.diy does not include the Enterprise-only features that Cal.com offers — Teams, Organizations, Insights, Workflows, and SSO/SAML are not present. This is an upstream choice; it is not specific to the StartOS package.
-- Cal.diy bakes the public web app URL into its static build. Absolute links in outbound emails and embeds use that baked URL; configuring a custom domain on the Web UI interface is the supported way to make those links work outside your LAN.
+- Changing the primary URL triggers a static-asset rewrite inside the container on the next start; expect tens of seconds of extra startup time.
 - Cal.diy is intended by upstream for personal, non-production self-hosting. Production-grade deployments are out of scope for both upstream and this package.

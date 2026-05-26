@@ -21,6 +21,7 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
       postgresPassword,
       nextAuthSecret,
       calendsoEncryptionKey,
+      smtp: { selection: 'disabled', value: {} },
     })
   } else {
     await storeJson.merge(effects, {})

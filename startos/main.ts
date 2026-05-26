@@ -1,8 +1,9 @@
+import { T } from '@start9labs/start-sdk'
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import {
-  internalWebappUrl,
+  builtWebappUrl,
   postgresDb,
   postgresPort,
   postgresUser,
@@ -13,9 +14,35 @@ export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Cal.diy!'))
 
   const store = await storeJson.read((s) => s).const(effects)
-  const postgresPassword = store?.postgresPassword ?? ''
-  const nextAuthSecret = store?.nextAuthSecret ?? ''
-  const calendsoEncryptionKey = store?.calendsoEncryptionKey ?? ''
+  if (!store) throw new Error(i18n('store.json not found'))
+
+  const postgresPassword = store.postgresPassword ?? ''
+  const nextAuthSecret = store.nextAuthSecret ?? ''
+  const calendsoEncryptionKey = store.calendsoEncryptionKey ?? ''
+  const webappUrl = store.url ?? builtWebappUrl
+
+  let smtpCredentials: T.SmtpValue | null = null
+  if (store.smtp?.selection === 'system') {
+    smtpCredentials = await sdk.getSystemSmtp(effects).const()
+    const customFrom = store.smtp.value.customFrom as string | undefined
+    if (smtpCredentials && customFrom) smtpCredentials.from = customFrom
+  } else if (store.smtp?.selection === 'custom') {
+    smtpCredentials = store.smtp.value as unknown as T.SmtpValue
+  }
+
+  const smtpEnv: Record<string, string> = {}
+  if (smtpCredentials) {
+    smtpEnv.EMAIL_FROM = smtpCredentials.from
+    smtpEnv.EMAIL_FROM_NAME = 'Cal.diy'
+    smtpEnv.EMAIL_SERVER_HOST = smtpCredentials.host
+    smtpEnv.EMAIL_SERVER_PORT = String(smtpCredentials.port)
+    if (smtpCredentials.username) {
+      smtpEnv.EMAIL_SERVER_USER = smtpCredentials.username
+    }
+    if (smtpCredentials.password) {
+      smtpEnv.EMAIL_SERVER_PASSWORD = smtpCredentials.password
+    }
+  }
 
   const postgresSub = await sdk.SubContainer.of(
     effects,
@@ -61,17 +88,12 @@ export const main = sdk.setupMain(async ({ effects }) => {
             '-h',
             '127.0.0.1',
           ])
-
-          if (exitCode !== 0) {
-            return {
-              result: 'loading',
-              message: i18n('Waiting for PostgreSQL to be ready'),
-            }
-          }
-          return {
-            result: 'success',
-            message: i18n('PostgreSQL is ready'),
-          }
+          return exitCode === 0
+            ? { result: 'success', message: i18n('PostgreSQL is ready') }
+            : {
+                result: 'loading',
+                message: i18n('Waiting for PostgreSQL to be ready'),
+              }
         },
       },
       requires: [],
@@ -85,19 +107,20 @@ export const main = sdk.setupMain(async ({ effects }) => {
           DATABASE_DIRECT_URL: databaseUrl,
           DATABASE_HOST: `127.0.0.1:${postgresPort}`,
           NEXTAUTH_SECRET: nextAuthSecret,
-          NEXTAUTH_URL: internalWebappUrl,
+          NEXTAUTH_URL: webappUrl,
           CALENDSO_ENCRYPTION_KEY: calendsoEncryptionKey,
-          NEXT_PUBLIC_WEBAPP_URL: internalWebappUrl,
-          NEXT_PUBLIC_WEBSITE_URL: internalWebappUrl,
-          BUILT_NEXT_PUBLIC_WEBAPP_URL: internalWebappUrl,
+          NEXT_PUBLIC_WEBAPP_URL: webappUrl,
+          NEXT_PUBLIC_WEBSITE_URL: webappUrl,
+          BUILT_NEXT_PUBLIC_WEBAPP_URL: builtWebappUrl,
           CALCOM_TELEMETRY_DISABLED: '1',
           NEXT_TELEMETRY_DISABLED: '1',
           NODE_ENV: 'production',
+          ...smtpEnv,
         },
       },
       ready: {
         display: i18n('Web Interface'),
-        gracePeriod: 180000,
+        gracePeriod: 300000,
         fn: () =>
           sdk.healthCheck.checkPortListening(effects, uiPort, {
             successMessage: i18n('Cal.diy is ready'),
@@ -105,5 +128,36 @@ export const main = sdk.setupMain(async ({ effects }) => {
           }),
       },
       requires: ['postgres'],
+    })
+    .addHealthCheck('primary-url', {
+      ready: {
+        display: i18n('Primary URL'),
+        fn: async () => ({
+          result: 'success',
+          message: i18n(
+            'Booking links, email confirmations, and magic-link logins all point at ${url}. Use the "Set Primary URL" action to change this.',
+            { url: webappUrl },
+          ),
+        }),
+      },
+      requires: ['cal-diy'],
+    })
+    .addHealthCheck('email', {
+      ready: {
+        display: i18n('Email Delivery'),
+        fn: async () =>
+          smtpCredentials
+            ? {
+                result: 'success',
+                message: i18n('SMTP configured — Cal.diy can send email.'),
+              }
+            : {
+                result: 'disabled',
+                message: i18n(
+                  'SMTP not configured. Booking confirmations and magic-link sign-in will not send email until you run the "Configure SMTP" action.',
+                ),
+              },
+      },
+      requires: ['cal-diy'],
     })
 })

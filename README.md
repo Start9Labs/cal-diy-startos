@@ -40,7 +40,7 @@ Cal.diy is the community-driven, fully open-source edition of Cal.com — a sche
 | App image     | `calcom/cal.com` (upstream Docker Hub; per-arch tags selected at build) |
 | Database      | `postgres:16-alpine`                                                 |
 | Architectures | x86_64, aarch64                                                      |
-| Entrypoint    | Upstream `start.sh` (runs Prisma migrations + app store seed, then starts Next.js) |
+| Entrypoint    | Upstream `start.sh` (runs `replace-placeholder.sh` to swap the baked URL, then Prisma migrations + app-store seed, then Next.js) |
 
 Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch manifest list. A thin Dockerfile in this repo selects the correct tag per architecture at pack time.
 
@@ -50,7 +50,7 @@ Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch man
 
 | Volume    | Mount Point             | Purpose                                                              |
 | --------- | ----------------------- | -------------------------------------------------------------------- |
-| `startos` | `/media/startos/volumes/startos` | StartOS-managed `store.json` (secrets generated at install time) |
+| `startos` | StartOS-managed         | `store.json` — generated secrets, selected primary URL, and SMTP config |
 | `db`      | `/var/lib/postgresql`   | PostgreSQL data directory                                            |
 
 ---
@@ -60,11 +60,12 @@ Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch man
 On first install:
 
 1. StartOS generates and stores three secrets in `store.json`:
-   - `postgresPassword` — the password for the bundled PostgreSQL sidecar.
+   - `postgresPassword` — for the bundled PostgreSQL sidecar.
    - `nextAuthSecret` — `NEXTAUTH_SECRET`, used to sign session tokens.
    - `calendsoEncryptionKey` — `CALENDSO_ENCRYPTION_KEY`, used by Cal.diy for symmetric encryption of integration credentials.
-2. PostgreSQL starts and the `cal-diy` daemon waits for it.
-3. The `cal-diy` daemon runs `prisma migrate deploy` against the empty database, seeds the bundled app store, then launches Next.js.
+2. The `taskSetPrimaryUrl` init step pre-selects the service's `.local` URL as the primary URL so the package boots into a usable state on the LAN with no further configuration.
+3. PostgreSQL starts and the `cal-diy` daemon waits for it.
+4. The `cal-diy` daemon runs `prisma migrate deploy` against the empty database, seeds the bundled app store, then launches Next.js.
 
 Once the **Web Interface** health check turns green, open the **Web UI** from the Dashboard tab and create the first administrator account in the Cal.diy signup flow.
 
@@ -74,10 +75,12 @@ Once the **Web Interface** health check turns green, open the **Web UI** from th
 
 | StartOS-Managed                          | Upstream-Managed                                            |
 | ---------------------------------------- | ----------------------------------------------------------- |
-| `DATABASE_URL`, `DATABASE_DIRECT_URL`, `DATABASE_HOST` (pointed at the sidecar PostgreSQL) | All user accounts, event types, availability, integrations, and bookings (managed inside the Cal.diy UI) |
-| `NEXTAUTH_SECRET`, `NEXTAUTH_URL`        | SMTP / OAuth provider credentials (set in the Cal.diy UI)   |
+| `DATABASE_URL`, `DATABASE_DIRECT_URL`, `DATABASE_HOST` | Calendar / video / payment integration credentials (set inside the Cal.diy UI) |
+| `NEXTAUTH_SECRET`, `NEXTAUTH_URL`        | All user accounts, event types, availability, and bookings |
 | `CALENDSO_ENCRYPTION_KEY`                |                                                             |
-| `NEXT_PUBLIC_WEBAPP_URL`, `NEXT_PUBLIC_WEBSITE_URL`, `BUILT_NEXT_PUBLIC_WEBAPP_URL` (set to `http://localhost:3000` to match the bake-time value, so the upstream `replace-placeholder.sh` is a no-op) | |
+| `NEXT_PUBLIC_WEBAPP_URL`, `NEXT_PUBLIC_WEBSITE_URL` (sourced from the "Set Primary URL" action) |  |
+| `BUILT_NEXT_PUBLIC_WEBAPP_URL` (fixed at `http://localhost:3000` to match the upstream bake-time value, so `replace-placeholder.sh` can do its job) | |
+| `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` (sourced from the "Configure SMTP" action) | |
 | `CALCOM_TELEMETRY_DISABLED=1`, `NEXT_TELEMETRY_DISABLED=1` | |
 | `NODE_ENV=production`                    |                                                             |
 
@@ -100,7 +103,12 @@ Once the **Web Interface** health check turns green, open the **Web UI** from th
 
 ## Actions (StartOS UI)
 
-None.
+| Name              | ID                | Visibility | Purpose                                                                                                                                                                                                                                                            |
+| ----------------- | ----------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Set Primary URL   | `set-primary-url` | Enabled    | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start. |
+| Configure SMTP    | `manage-smtp`     | Enabled    | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                              |
+
+A `taskSetPrimaryUrl` init task pre-selects a `.local` URL on first install and re-prompts the user (as a critical task) if the chosen URL later becomes unavailable.
 
 ---
 
@@ -109,7 +117,7 @@ None.
 **Included in backup:**
 
 - Full PostgreSQL dump of the `calendso` database (taken with `pg_dump` against the sidecar)
-- `startos` volume (preserves the generated secrets so a restore continues to decrypt existing integration credentials)
+- `startos` volume (preserves the generated secrets, primary URL, and SMTP config so a restore continues to decrypt existing integration credentials)
 
 **Restore behavior:** PostgreSQL is dump-restored before the `cal-diy` daemon starts.
 
@@ -120,9 +128,11 @@ None.
 | Check          | Method                              | Messages                                                                 |
 | -------------- | ----------------------------------- | ------------------------------------------------------------------------ |
 | Database       | `pg_isready` against the sidecar    | Success: "PostgreSQL is ready" / Loading: "Waiting for PostgreSQL to be ready" |
-| Web Interface  | Port listening (3000)               | Success: "Cal.diy is ready" / Error: "Cal.diy is not ready"              |
+| Web Interface  | Port listening (3000), 5-minute grace period | Success: "Cal.diy is ready" / Error: "Cal.diy is not ready" |
+| Primary URL    | Static success, displays the active URL | "Booking links, email confirmations, and magic-link logins all point at &lt;url&gt;..." |
+| Email Delivery | Reflects whether SMTP is configured | Success: "SMTP configured" / Disabled: prompt to run the SMTP action     |
 
-The web check has a 3-minute grace period because Cal.diy runs Prisma migrations and seeds the app store on first start.
+The web check uses a 5-minute grace period because Cal.diy runs Prisma migrations, seeds the bundled app store, and (if the primary URL has changed) sweeps `.next/` with `replace-placeholder.sh` on every container start.
 
 ---
 
@@ -135,9 +145,10 @@ None.
 ## Limitations and Differences
 
 1. **No public REST API.** Upstream's optional `apps/api/v2` service (NestJS + Redis) is not packaged. The web UI, tRPC, and integrations all work; programmatic access via the public `/api/v2` REST endpoints does not.
-2. **Absolute URLs are baked at `http://localhost:3000`.** Cal.diy bakes `NEXT_PUBLIC_WEBAPP_URL` into the static build at upstream build time. Booking confirmation emails and other absolute links will use the URL that is baked in; for them to point at your real address, configure a custom domain in StartOS and serve the package through it.
-3. **No enterprise features.** Cal.diy upstream has removed Teams, Organizations, Insights, Workflows, SSO/SAML, and other commercial features that exist in Cal.com. None of them are available here either.
-4. **Telemetry is disabled** via `CALCOM_TELEMETRY_DISABLED=1` and `NEXT_TELEMETRY_DISABLED=1`.
+2. **No enterprise features.** Cal.diy upstream has removed Teams, Organizations, Insights, Workflows, SSO/SAML, and other commercial features that exist in Cal.com. None of them are available here either.
+3. **Static URL rewrite on each start.** When the primary URL differs from the baked-in `http://localhost:3000`, the upstream `replace-placeholder.sh` rewrites the entire `.next/` directory on every container start. Expect tens of seconds of extra startup time after a URL change.
+4. **`NEXT_PUBLIC_DISABLE_SIGNUP` is not exposed as an action** because it is a `NEXT_PUBLIC_*` value baked into the static build; a runtime toggle would require an additional `replace-placeholder.sh` pass and is not implemented in this release.
+5. **Telemetry is disabled** via `CALCOM_TELEMETRY_DISABLED=1` and `NEXT_TELEMETRY_DISABLED=1`.
 
 ---
 
@@ -163,7 +174,7 @@ package_id: cal-diy
 image: calcom/cal.com
 architectures: [x86_64, aarch64]
 volumes:
-  startos: /media/startos/volumes/startos
+  startos: store.json (StartOS-managed)
   db: /var/lib/postgresql
 ports:
   ui: 3000
@@ -178,8 +189,16 @@ startos_managed_env_vars:
   - NEXT_PUBLIC_WEBAPP_URL
   - NEXT_PUBLIC_WEBSITE_URL
   - BUILT_NEXT_PUBLIC_WEBAPP_URL
+  - EMAIL_FROM
+  - EMAIL_FROM_NAME
+  - EMAIL_SERVER_HOST
+  - EMAIL_SERVER_PORT
+  - EMAIL_SERVER_USER
+  - EMAIL_SERVER_PASSWORD
   - CALCOM_TELEMETRY_DISABLED
   - NEXT_TELEMETRY_DISABLED
   - NODE_ENV
-actions: none
+actions:
+  - set-primary-url
+  - manage-smtp
 ```
