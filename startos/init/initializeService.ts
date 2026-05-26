@@ -17,12 +17,18 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
       len: 32,
     })
 
+    // Default-deny new account creation. Cal.diy's first-admin bootstrap at
+    // /api/auth/setup is not gated by NEXT_PUBLIC_DISABLE_SIGNUP (it only
+    // checks `userCount === 0`), so the user can still create the initial
+    // admin on first launch. Subsequent users are added through Cal.diy's
+    // admin console at /settings/admin/users/add — see the "Add a user"
+    // guidance in the package instructions.
     await storeJson.merge(effects, {
       postgresPassword,
       nextAuthSecret,
       calendsoEncryptionKey,
       smtp: { selection: 'disabled', value: {} },
-      signupDisabled: false,
+      signupDisabled: true,
     })
   } else {
     await storeJson.merge(effects, {})

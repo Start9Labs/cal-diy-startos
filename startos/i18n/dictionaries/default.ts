@@ -51,8 +51,8 @@ const dict = {
   'Disable Signups': 33,
   'Signups are currently disabled. Run this action to allow new account creation on your Cal.diy instance.': 34,
   'Signups are currently enabled. Run this action to prevent new account creation. Existing users are unaffected; only new signups are blocked.': 35,
-  'Anyone who can reach this Cal.diy instance will be able to create an account. Only re-enable if you intend to invite new users.': 36,
-  'A vestigial "Create Account" link will still render in the login page footer (it is baked into the static JavaScript bundle at upstream build time), but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.': 37,
+  'Most self-hosted instances should NOT enable open signups. Anyone who can reach this Cal.diy URL will be able to create an account. If you just need to add a few users you trust, leave signups disabled and add them from the Cal.diy admin console (Settings → Admin → Users → Add) instead — the new user signs in via the Forgot Password flow if SMTP is configured, or you can run the "Reset User Password" action here to mint their initial password and share it out-of-band. Only enable open signups if you specifically want strangers to self-register.': 36,
+  'After disabling, add new users from the Cal.diy admin console (Settings → Admin → Users → Add). The new user signs in via Forgot Password (SMTP required) or you can use the "Reset User Password" action here to mint their first password. A vestigial "Create Account" link will still render in the login page footer — it is baked into the static JavaScript bundle at upstream build time — but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.': 37,
 } as const
 
 /**

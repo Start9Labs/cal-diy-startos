@@ -63,11 +63,19 @@ On first install:
    - `postgresPassword` — for the bundled PostgreSQL sidecar.
    - `nextAuthSecret` — `NEXTAUTH_SECRET`, used to sign session tokens.
    - `calendsoEncryptionKey` — `CALENDSO_ENCRYPTION_KEY`, used by Cal.diy for symmetric encryption of integration credentials.
-2. The `taskSetPrimaryUrl` init step pre-selects the service's `.local` URL as the primary URL so the package boots into a usable state on the LAN with no further configuration.
-3. PostgreSQL starts and the `cal-diy` daemon waits for it.
-4. The `cal-diy` daemon runs `prisma migrate deploy` against the empty database, seeds the bundled app store, then launches Next.js.
+2. **Open signups are disabled by default** (`signupDisabled: true` in `store.json` → `NEXT_PUBLIC_DISABLE_SIGNUP=true` to the daemon, plus the `disable-signup` row in Cal.diy's `Feature` table is set to `enabled=true`).
+3. The `taskSetPrimaryUrl` init step pre-selects the service's `.local` URL as the primary URL so the package boots into a usable state on the LAN with no further configuration.
+4. PostgreSQL starts and the `cal-diy` daemon waits for it.
+5. The `cal-diy` daemon runs `prisma migrate deploy` against the empty database, seeds the bundled app store, then launches Next.js.
 
-Once the **Web Interface** health check turns green, open the **Web UI** from the Dashboard tab and create the first administrator account in the Cal.diy signup flow.
+Once the **Web Interface** health check turns green, open the **Web UI** from the Dashboard tab. The first time the URL is hit you're redirected to `/auth/setup` — Cal.diy's first-admin bootstrap. That endpoint only checks `userCount === 0` and is **not** gated by `NEXT_PUBLIC_DISABLE_SIGNUP`, so the initial admin can be created even with open signups disabled.
+
+To add more users without enabling open signups, sign in as the admin and go to **Settings → Admin → Users → Add** (Cal.diy's built-in admin user-add page, backed by the `users.add` tRPC `authedAdminProcedure`). The new user has no password row until they either:
+
+- run Cal.diy's **Forgot Password** flow (requires SMTP — see the "Configure SMTP" action), or
+- have you run the StartOS **Reset User Password** action to mint their initial password.
+
+Only enable open signups if you specifically want strangers to self-register.
 
 ---
 
