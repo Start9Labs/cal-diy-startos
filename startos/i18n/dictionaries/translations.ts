@@ -40,6 +40,7 @@ export default {
     35: 'Los registros están actualmente habilitados. Ejecuta esta acción para impedir la creación de nuevas cuentas. Los usuarios existentes no se ven afectados; solo se bloquean los nuevos registros.',
     36: 'Cualquiera que pueda acceder a esta instancia de Cal.diy podrá crear una cuenta. Vuelve a habilitar solo si tienes intención de invitar a nuevos usuarios.',
     37: 'Un enlace residual "Crear cuenta" seguirá apareciendo en el pie de la página de inicio de sesión (está incrustado en el bundle estático de JavaScript en tiempo de compilación de upstream), pero al pulsarlo se redirige a una página de error "El registro está deshabilitado". La aplicación del lado del servidor está activa.',
+    38: 'Se puede cambiar en cualquier momento, pero hacerlo después de que Cal.diy haya estado en uso tiene consecuencias reales: cualquier integración OAuth conectada (Google, Microsoft, Zoom, etc.) necesitará volver a registrar su URI de redirección con cada proveedor y reconectarse aquí, ya que el host del callback con el que se registró ya no coincide; todas las sesiones activas se cerrarán porque las cookies de NextAuth están ligadas al dominio de la URL; cualquier enlace de reserva, fragmento de incrustación o firma de correo que hayas compartido externamente con la URL antigua dejará de funcionar y deberá actualizarse; y los enlaces dentro de los correos de confirmación de reserva ya enviados seguirán apuntando a la URL antigua (solo los correos nuevos usan la URL nueva).',
   },
   de_DE: {
     0: 'Cal.diy wird gestartet!',
@@ -80,6 +81,7 @@ export default {
     35: 'Anmeldungen sind derzeit aktiviert. Führe diese Aktion aus, um neue Kontoerstellung zu verhindern. Bestehende Benutzer sind nicht betroffen; nur neue Anmeldungen werden blockiert.',
     36: 'Jeder, der diese Cal.diy-Instanz erreichen kann, kann ein Konto erstellen. Reaktiviere nur, wenn du neue Benutzer einladen möchtest.',
     37: 'Ein verbleibender „Konto erstellen"-Link wird weiterhin in der Fußzeile der Anmeldeseite angezeigt (er ist beim Upstream-Build in den statischen JavaScript-Bundle eingebrannt), aber ein Klick leitet auf eine Fehlerseite „Anmeldung ist deaktiviert" um. Die serverseitige Durchsetzung ist aktiv.',
+    38: 'Jederzeit änderbar, aber eine Änderung nach Inbetriebnahme von Cal.diy hat reale Konsequenzen: alle verbundenen OAuth-Integrationen (Google, Microsoft, Zoom usw.) benötigen eine erneute Registrierung ihrer Weiterleitungs-URI beim jeweiligen Anbieter und müssen hier erneut verbunden werden, da der Callback-Host nicht mehr übereinstimmt; alle aktiven Sitzungen werden abgemeldet, weil NextAuth-Cookies an die URL-Domain gebunden sind; alle Buchungslinks, Einbettungsschnipsel oder E-Mail-Signaturen, die du extern mit der alten URL geteilt hast, funktionieren nicht mehr und müssen aktualisiert werden; und Links in bereits gesendeten Buchungsbestätigungs-E-Mails verweisen weiterhin auf die alte URL (nur neue E-Mails verwenden die neue URL).',
   },
   pl_PL: {
     0: 'Uruchamianie Cal.diy!',
@@ -120,6 +122,7 @@ export default {
     35: 'Rejestracje są obecnie włączone. Uruchom tę akcję, aby zapobiec tworzeniu nowych kont. Istniejący użytkownicy nie są dotknięci; blokowane są tylko nowe rejestracje.',
     36: 'Każdy, kto może dotrzeć do tej instancji Cal.diy, będzie mógł utworzyć konto. Włącz ponownie tylko wtedy, gdy zamierzasz zapraszać nowych użytkowników.',
     37: 'Resztkowy link „Utwórz konto" nadal będzie się renderował w stopce strony logowania (jest wpieczony w statyczny pakiet JavaScript w czasie kompilacji upstream), ale jego kliknięcie przekieruje na stronę błędu „Rejestracja jest wyłączona". Egzekwowanie po stronie serwera jest aktywne.',
+    38: 'Można zmieniać w dowolnym momencie, ale zmiana po rozpoczęciu używania Cal.diy ma realne konsekwencje: wszystkie połączone integracje OAuth (Google, Microsoft, Zoom itd.) będą wymagały ponownej rejestracji URI przekierowania u każdego dostawcy i ponownego połączenia tutaj, ponieważ host callbacku, z którym zostały zarejestrowane, już się nie zgadza; wszystkie aktywne sesje zostaną wylogowane, ponieważ ciasteczka NextAuth są związane z domeną URL; wszystkie linki rezerwacji, fragmenty osadzenia lub podpisy e-mail, które zostały udostępnione zewnętrznie ze starą URL, przestają działać i wymagają aktualizacji; a linki w już wysłanych wiadomościach potwierdzających rezerwację nadal będą wskazywać na starą URL (tylko nowe wiadomości używają nowej URL).',
   },
   fr_FR: {
     0: 'Démarrage de Cal.diy !',
@@ -160,5 +163,6 @@ export default {
     35: 'Les inscriptions sont actuellement activées. Exécutez cette action pour empêcher la création de nouveaux comptes. Les utilisateurs existants ne sont pas affectés ; seules les nouvelles inscriptions sont bloquées.',
     36: 'Toute personne qui peut atteindre cette instance Cal.diy pourra créer un compte. Ne réactivez que si vous comptez inviter de nouveaux utilisateurs.',
     37: "Un lien résiduel « Créer un compte » continuera à s'afficher dans le pied de page de la page de connexion (il est intégré dans le bundle JavaScript statique au moment de la compilation upstream), mais cliquer dessus redirige vers une page d'erreur « L'inscription est désactivée ». L'application côté serveur est en vigueur.",
+    38: "Peut être changée à tout moment, mais le faire après que Cal.diy a été en service a des conséquences réelles : toutes les intégrations OAuth connectées (Google, Microsoft, Zoom, etc.) devront voir leur URI de redirection ré-enregistrée auprès de chaque fournisseur et reconnectée ici, car l'hôte du callback enregistré ne correspond plus ; toutes les sessions actives seront déconnectées car les cookies de NextAuth sont liés au domaine de l'URL ; tous les liens de réservation, extraits d'intégration ou signatures d'e-mail que vous avez partagés à l'extérieur avec l'ancienne URL cessent de fonctionner et doivent être mis à jour ; et les liens dans les e-mails de confirmation de réservation déjà envoyés continueront à pointer vers l'ancienne URL (seuls les nouveaux e-mails utilisent la nouvelle URL).",
   },
 } satisfies Record<string, LangDict>
