@@ -1,4 +1,5 @@
-// Here we define any constants or functions that are shared by multiple components
-// throughout the package codebase. This file will be unnecessary for many packages.
-
-export const uiPort = 80
+export const uiPort = 3000
+export const postgresPort = 5432
+export const postgresUser = 'calcom'
+export const postgresDb = 'calendso'
+export const internalWebappUrl = 'http://localhost:3000'

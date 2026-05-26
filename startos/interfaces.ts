@@ -7,10 +7,13 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
   const uiMultiOrigin = await uiMulti.bindPort(uiPort, {
     protocol: 'http',
   })
+
   const ui = sdk.createInterface(effects, {
     name: i18n('Web UI'),
     id: 'ui',
-    description: i18n('The web interface of Hello World'),
+    description: i18n(
+      'The Cal.diy web interface for managing your calendar and bookings',
+    ),
     type: 'ui',
     masked: false,
     schemeOverride: null,

@@ -1,13 +1,13 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '2.0.0:6',
+  version: '6.2.0:0',
   releaseNotes: {
-    en_US: 'Bumps start-sdk → 1.5.2.',
-    es_ES: 'Actualiza start-sdk → 1.5.2.',
-    de_DE: 'Aktualisiert start-sdk → 1.5.2.',
-    pl_PL: 'Aktualizuje start-sdk → 1.5.2.',
-    fr_FR: 'Met à jour start-sdk → 1.5.2.',
+    en_US: 'Initial Cal.diy release for StartOS.',
+    es_ES: 'Versión inicial de Cal.diy para StartOS.',
+    de_DE: 'Erste Cal.diy-Veröffentlichung für StartOS.',
+    pl_PL: 'Pierwsze wydanie Cal.diy dla StartOS.',
+    fr_FR: 'Première version de Cal.diy pour StartOS.',
   },
   migrations: {
     up: async ({ effects }) => {},
