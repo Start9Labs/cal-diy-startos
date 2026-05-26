@@ -16,6 +16,10 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
       charset: 'a-z,A-Z,0-9',
       len: 32,
     })
+    const cronApiKey = utils.getDefaultString({
+      charset: 'a-z,A-Z,0-9',
+      len: 44,
+    })
 
     // Default-deny new account creation. Cal.diy's first-admin bootstrap at
     // /api/auth/setup is not gated by NEXT_PUBLIC_DISABLE_SIGNUP (it only
@@ -27,6 +31,7 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
       postgresPassword,
       nextAuthSecret,
       calendsoEncryptionKey,
+      cronApiKey,
       smtp: { selection: 'disabled', value: {} },
       signupDisabled: true,
     })

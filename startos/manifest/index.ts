@@ -32,6 +32,19 @@ export const manifest = setupManifest({
       },
       arch: ['x86_64', 'aarch64'],
     },
+    cron: {
+      source: {
+        dockerBuild: {
+          dockerfile: './cron.Dockerfile',
+        },
+      },
+      arch: ['x86_64', 'aarch64'],
+    },
+  },
+  hardwareRequirements: {
+    // Cal.diy's web daemon idles ~750 MB and PostgreSQL adds ~200 MB. Sub-2 GB
+    // boxes OOM during peak load (booking page renders + Prisma queries).
+    ram: 2048,
   },
   alerts: {
     install: null,

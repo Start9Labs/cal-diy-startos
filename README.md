@@ -39,7 +39,9 @@ Cal.diy is the community-driven, fully open-source edition of Cal.com — a sche
 | ------------- | -------------------------------------------------------------------- |
 | App image     | `calcom/cal.com` (upstream Docker Hub; per-arch tags selected at build) |
 | Database      | `postgres:16-alpine`                                                 |
+| Cron sidecar  | `alpine:3.20 + curl` (built locally from `cron.Dockerfile`); runs `busybox crond` against the documented Vercel-style schedule from upstream's `apps/web/vercel.json` |
 | Architectures | x86_64, aarch64                                                      |
+| RAM           | 2048 MB declared in `hardwareRequirements`. Cal.diy + Postgres idles ~950 MB and spikes higher under load. |
 | Entrypoint    | Upstream `start.sh` (runs `replace-placeholder.sh` to swap the baked URL, then Prisma migrations + app-store seed, then Next.js) |
 
 Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch manifest list. A thin Dockerfile in this repo selects the correct tag per architecture at pack time.
@@ -59,10 +61,11 @@ Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch man
 
 On first install:
 
-1. StartOS generates and stores three secrets in `store.json`:
+1. StartOS generates and stores four secrets in `store.json`:
    - `postgresPassword` — for the bundled PostgreSQL sidecar.
    - `nextAuthSecret` — `NEXTAUTH_SECRET`, used to sign session tokens.
    - `calendsoEncryptionKey` — `CALENDSO_ENCRYPTION_KEY`, used by Cal.diy for symmetric encryption of integration credentials.
+   - `cronApiKey` — `CRON_API_KEY`, shared between the cal-diy daemon (which validates incoming cron requests) and the cron sidecar (which authenticates outgoing calls).
 2. **Open signups are disabled by default** (`signupDisabled: true` in `store.json` → `NEXT_PUBLIC_DISABLE_SIGNUP=true` to the daemon, plus the `disable-signup` row in Cal.diy's `Feature` table is set to `enabled=true`).
 3. The `taskSetPrimaryUrl` init step pre-selects the service's `.local` URL as the primary URL so the package boots into a usable state on the LAN with no further configuration.
 4. PostgreSQL starts and the `cal-diy` daemon waits for it.
@@ -90,6 +93,8 @@ Only enable open signups if you specifically want strangers to self-register.
 | `BUILT_NEXT_PUBLIC_WEBAPP_URL` (fixed at `http://localhost:3000` to match the upstream bake-time value, so `replace-placeholder.sh` can do its job) | |
 | `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` (sourced from the "Configure SMTP" action) | |
 | `NEXT_PUBLIC_DISABLE_SIGNUP` (sourced from the "Enable/Disable Signups" action) | |
+| `CRON_API_KEY` (auto-generated at install; shared with the cron sidecar) | |
+| `ENABLE_ASYNC_TASKER=true`, `TASKER_ENABLE_EMAILS=1`, `TASKER_ENABLE_WEBHOOKS=1` (enable cal.com's tasker so `/api/tasks/cron` has queued work to drain) | |
 | `CALCOM_TELEMETRY_DISABLED=1`, `NEXT_TELEMETRY_DISABLED=1` | |
 | `NODE_ENV=production`                    |                                                             |
 
@@ -136,14 +141,33 @@ A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and 
 
 ## Health Checks
 
-| Check          | Method                              | Messages                                                                 |
-| -------------- | ----------------------------------- | ------------------------------------------------------------------------ |
-| Database       | `pg_isready` against the sidecar    | Success: "PostgreSQL is ready" / Loading: "Waiting for PostgreSQL to be ready" |
-| Web Interface  | Port listening (3000), 5-minute grace period | Success: "Cal.diy is ready" / Error: "Cal.diy is not ready" |
-| Primary URL    | Static success, displays the active URL | "Booking links, email confirmations, and magic-link logins all point at &lt;url&gt;..." |
-| Email Delivery | Reflects whether SMTP is configured | Success: "SMTP configured" / Disabled: prompt to run the SMTP action     |
+| Check            | Method                              | Messages                                                                 |
+| ---------------- | ----------------------------------- | ------------------------------------------------------------------------ |
+| Database         | `pg_isready` against the sidecar    | Success: "PostgreSQL is ready" / Loading: "Waiting for PostgreSQL to be ready" |
+| Web Interface    | HTTP GET `/api/version` against `http://127.0.0.1:3000` with a 5-minute grace period | Success: "Cal.diy is ready" / Error: "Cal.diy is not ready" |
+| Background Jobs  | Static success while the cron sidecar daemon is up | "Cron sidecar is running. Booking reminders, OAuth credential refresh, calendar sync, and workflow emails fire on schedule." |
+| Primary URL      | Static success, displays the active URL | "Booking links, email confirmations, and magic-link logins all point at &lt;url&gt;..." |
+| Email Delivery   | Reflects whether SMTP is configured | Success: "SMTP configured" / Disabled: prompt to run the SMTP action     |
 
-The web check uses a 5-minute grace period because Cal.diy runs Prisma migrations, seeds the bundled app store, and (if the primary URL has changed) sweeps `.next/` with `replace-placeholder.sh` on every container start.
+The web check probes `/api/version` rather than just port-listening, so it doesn't go green until the Next.js router and Prisma client are actually serving requests. The 5-minute grace period covers Prisma migrations, app-store seeding, and (if the primary URL has changed) the `replace-placeholder.sh` sweep on every container start.
+
+### Scheduled jobs
+
+Cal.com expects an external scheduler to hit `/api/cron/*` and `/api/tasks/*` on the schedule defined by upstream's `apps/web/vercel.json`. Without this, booking reminder emails never send, OAuth access tokens for Google / Microsoft / Apple Calendar integrations are never refreshed (and stop working after their TTL expires, ~1h for Google), workflow SMS/email/WhatsApp reminders never fire, calendar feeds drift, and queued form responses pile up.
+
+A small alpine sidecar bundled in this package runs `busybox crond` with this exact crontab (authenticated with the auto-generated `CRON_API_KEY`):
+
+| Schedule        | Endpoint                                       | Purpose                                                  |
+| --------------- | ---------------------------------------------- | -------------------------------------------------------- |
+| every minute    | `/api/tasks/cron`                              | Central tasker — drains queued reminder/webhook jobs     |
+| every 5 minutes | `/api/cron/calendar-subscriptions`             | Sync external calendar feeds                             |
+| every 5 minutes | `/api/cron/credentials`                        | Refresh OAuth access tokens for connected integrations   |
+| every 5 minutes | `/api/cron/selected-calendars`                 | Reconcile per-user selected calendar state               |
+| daily 03:00     | `/api/cron/calendar-subscriptions-cleanup`     | Drop stale calendar subscriptions                        |
+| every 12 hours  | `/api/cron/queuedFormResponseCleanup`          | Cleanup queued routing-form responses                    |
+| daily 00:00     | `/api/tasks/cleanup`                           | Tasker cleanup                                           |
+
+The cron sidecar runs in the same network namespace as the web daemon and calls `http://127.0.0.1:3000/...?apiKey=<CRON_API_KEY>`. Cal.com accepts the raw key via the `apiKey` query param or via an `Authorization` header.
 
 ---
 
@@ -209,6 +233,10 @@ startos_managed_env_vars:
   - EMAIL_SERVER_USER
   - EMAIL_SERVER_PASSWORD
   - NEXT_PUBLIC_DISABLE_SIGNUP
+  - CRON_API_KEY
+  - ENABLE_ASYNC_TASKER
+  - TASKER_ENABLE_EMAILS
+  - TASKER_ENABLE_WEBHOOKS
   - CALCOM_TELEMETRY_DISABLED
   - NEXT_TELEMETRY_DISABLED
   - NODE_ENV

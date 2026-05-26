@@ -19,6 +19,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const postgresPassword = store.postgresPassword ?? ''
   const nextAuthSecret = store.nextAuthSecret ?? ''
   const calendsoEncryptionKey = store.calendsoEncryptionKey ?? ''
+  const cronApiKey = store.cronApiKey ?? ''
   const webappUrl = store.url ?? builtWebappUrl
   const signupDisabled = store.signupDisabled ?? false
 
@@ -89,7 +90,38 @@ export const main = sdk.setupMain(async ({ effects }) => {
     'cal-diy-sub',
   )
 
+  const cronSub = await sdk.SubContainer.of(
+    effects,
+    { imageId: 'cron' },
+    sdk.Mounts.of(),
+    'cal-cron-sub',
+  )
+
   const databaseUrl = `postgresql://${postgresUser}:${postgresPassword}@127.0.0.1:${postgresPort}/${postgresDb}`
+
+  // Vercel-style cron schedule mirrored from upstream's apps/web/vercel.json.
+  // Without these jobs running, booking reminders never send, OAuth tokens for
+  // calendar integrations are never refreshed (Google/Microsoft tokens expire
+  // after ~1h), workflow SMS/email never fires, and calendar subscriptions
+  // never sync. We bundle a tiny alpine sidecar with busybox crond + curl that
+  // hits each /api/cron and /api/tasks endpoint on the documented schedule.
+  // Auth: cal accepts either `Authorization: <CRON_API_KEY>` (raw, no Bearer)
+  // or `?apiKey=<key>`. Query param is simpler in a busybox crontab.
+  const cronCmd = (path: string) =>
+    `curl -fsS --max-time 300 -o /dev/null "http://127.0.0.1:${uiPort}${path}?apiKey=${cronApiKey}" || true`
+  const cronScript = `set -e
+mkdir -p /etc/crontabs
+cat > /etc/crontabs/root <<'CRONTAB'
+* * * * * ${cronCmd('/api/tasks/cron')}
+*/5 * * * * ${cronCmd('/api/cron/calendar-subscriptions')}
+*/5 * * * * ${cronCmd('/api/cron/credentials')}
+*/5 * * * * ${cronCmd('/api/cron/selected-calendars')}
+0 3 * * * ${cronCmd('/api/cron/calendar-subscriptions-cleanup')}
+0 */12 * * * ${cronCmd('/api/cron/queuedFormResponseCleanup')}
+0 0 * * * ${cronCmd('/api/tasks/cleanup')}
+CRONTAB
+exec crond -f -l 8
+`
 
   return sdk.Daemons.of(effects)
     .addDaemon('postgres', {
@@ -139,6 +171,14 @@ export const main = sdk.setupMain(async ({ effects }) => {
           NEXT_PUBLIC_WEBSITE_URL: webappUrl,
           BUILT_NEXT_PUBLIC_WEBAPP_URL: builtWebappUrl,
           NEXT_PUBLIC_DISABLE_SIGNUP: signupDisabled ? 'true' : '',
+          // Cron sidecar uses this to authenticate against /api/cron/* and
+          // /api/tasks/*. Same key is baked into the crontab at start.
+          CRON_API_KEY: cronApiKey,
+          // Enable the tasker so /api/tasks/cron actually has work to drain
+          // (booking reminder emails, workflow webhooks, etc.).
+          ENABLE_ASYNC_TASKER: 'true',
+          TASKER_ENABLE_EMAILS: '1',
+          TASKER_ENABLE_WEBHOOKS: '1',
           CALCOM_TELEMETRY_DISABLED: '1',
           NEXT_TELEMETRY_DISABLED: '1',
           NODE_ENV: 'production',
@@ -149,12 +189,36 @@ export const main = sdk.setupMain(async ({ effects }) => {
         display: i18n('Web Interface'),
         gracePeriod: 300000,
         fn: () =>
-          sdk.healthCheck.checkPortListening(effects, uiPort, {
-            successMessage: i18n('Cal.diy is ready'),
-            errorMessage: i18n('Cal.diy is not ready'),
-          }),
+          // Probe /api/version rather than just port-listening so we know
+          // the Next.js router and Prisma client are actually serving
+          // requests, not just bound to the port.
+          sdk.healthCheck.checkWebUrl(
+            effects,
+            `http://127.0.0.1:${uiPort}/api/version`,
+            {
+              timeout: 5000,
+              successMessage: i18n('Cal.diy is ready'),
+              errorMessage: i18n('Cal.diy is not ready'),
+            },
+          ),
       },
       requires: ['postgres'],
+    })
+    .addDaemon('cron', {
+      subcontainer: cronSub,
+      exec: {
+        command: ['sh', '-c', cronScript],
+      },
+      ready: {
+        display: i18n('Background Jobs'),
+        fn: async () => ({
+          result: 'success',
+          message: i18n(
+            'Cron sidecar is running. Booking reminders, OAuth credential refresh, calendar sync, and workflow emails fire on schedule.',
+          ),
+        }),
+      },
+      requires: ['cal-diy'],
     })
     .addHealthCheck('primary-url', {
       ready: {

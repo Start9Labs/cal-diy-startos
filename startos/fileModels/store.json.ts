@@ -5,6 +5,7 @@ const shape = z.object({
   postgresPassword: z.string().optional().catch(undefined),
   nextAuthSecret: z.string().optional().catch(undefined),
   calendsoEncryptionKey: z.string().optional().catch(undefined),
+  cronApiKey: z.string().optional().catch(undefined),
   url: z.string().optional().catch(undefined),
   smtp: smtpShape,
   signupDisabled: z.boolean().catch(false),

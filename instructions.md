@@ -16,6 +16,7 @@ You've installed Cal.diy — the community-driven, fully open-source edition of 
 - A **Configure SMTP** action lets you supply (or borrow from StartOS) the SMTP credentials Cal.diy needs to send booking confirmations, reminders, and magic-link sign-in messages.
 - **Open signups are off by default** — only the very first admin can be created from the web form; all subsequent users are added by the admin through Cal.diy's own admin console (no risk that a random LAN visitor signs themselves in before you finish setting up). An **Enable/Disable Signups** action lets you flip this if you specifically want to allow public registration.
 - A **Reset User Password** action generates a new password for a given email address, useful if you ever lose your password and can't rely on email-based recovery.
+- **Booking reminders, OAuth token refresh, calendar feed syncs, and workflow emails just work** — a tiny background scheduler runs the upstream cron jobs on the documented schedule. (Cal.com's hosted product gets these from Vercel cron; we bundle our own.)
 - Telemetry is disabled.
 
 ## Getting set up
