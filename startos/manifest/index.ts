@@ -54,5 +54,15 @@ export const manifest = setupManifest({
     start: null,
     stop: null,
   },
-  dependencies: {},
+  dependencies: {
+    jitsi: {
+      description:
+        'Optional self-hosted video conferencing. After installing Jitsi from the marketplace, run Cal.diy\'s "Set Up Self-Hosted Jitsi" action to make Cal.diy use your local Jitsi instance for meeting links — no API key required.',
+      optional: true,
+      metadata: {
+        title: 'Jitsi Meet',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/jitsi-startos/master/icon.svg',
+      },
+    },
+  },
 })

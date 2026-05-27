@@ -124,6 +124,7 @@ Only enable open signups if you specifically want strangers to self-register.
 | Set Primary URL        | `set-primary-url` | Any status     | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start. |
 | Configure SMTP         | `manage-smtp`     | Any status     | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                              |
 | Enable/Disable Signups | `toggle-signup`   | Any status     | Flips `signupDisabled` in `store.json`; the daemon picks it up reactively and the next start passes `NEXT_PUBLIC_DISABLE_SIGNUP` to cal. Cal's signup gate is `env-or-dbFlag`, and we rely entirely on the env half. The vestigial "Create Account" link in the login footer is baked into the client bundle and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error. |
+| Set Up Self-Hosted Jitsi | `setup-jitsi`   | Only running   | Reads URLs from the optional `jitsi` StartOS dependency via `sdk.serviceInterface.get`, lets the user pick which one Cal.diy will use for meeting links, and UPDATEs cal's `App.keys.jitsiHost` (with `jitsiPathPattern={uuid}`). Cal's Jitsi app is seeded by its app-store sync on startup so the row always exists by the time this runs. |
 | Reset User Password    | `reset-password`  | Only running   | Generates a 22-character random password, hashes it with `bcryptjs` (cost 12) inside a temp container of the `main` image, and upserts it into the `UserPassword` row joined to `User.email`. Surfaces the new password back to the StartOS UI as a masked, copyable single-value result. |
 
 A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and re-prompts the user (as a critical task) if the chosen URL later becomes unavailable.
@@ -175,7 +176,9 @@ The cron sidecar runs in the same network namespace as the web daemon and calls 
 
 ## Dependencies
 
-None.
+| Service | Required? | Purpose                                                                                                                                                                                                       |
+| ------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jitsi` | optional  | Self-hosted video conferencing. When installed and running, the **Set Up Self-Hosted Jitsi** action reads its URLs and configures Cal.diy's Jitsi Video app to point at it — no API key, no manual paste of the URL. Cal.diy works fine without this; without it Jitsi meeting links default to the public `https://meet.jit.si/cal`. |
 
 ---
 
@@ -247,6 +250,9 @@ startos_managed_env_vars:
 actions:
   - set-primary-url
   - manage-smtp
+  - setup-jitsi
   - toggle-signup
   - reset-password
+optional_dependencies:
+  - jitsi
 ```
