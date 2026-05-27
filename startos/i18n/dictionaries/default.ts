@@ -55,18 +55,6 @@ const dict = {
   'Signups are currently enabled. Run this action to prevent new account creation. Existing users are unaffected; only new signups are blocked.': 35,
   'Most self-hosted instances should NOT enable open signups. Anyone who can reach this Cal.diy URL will be able to create an account. If you just need to add a few users you trust, leave signups disabled and add them from the Cal.diy admin console (Settings → Admin → Users → Add) instead — the new user signs in via the Forgot Password flow if SMTP is configured, or you can run the "Reset User Password" action here to mint their initial password and share it out-of-band. Only enable open signups if you specifically want strangers to self-register.': 36,
   'After disabling, add new users from the Cal.diy admin console (Settings → Admin → Users → Add). The new user signs in via Forgot Password (SMTP required) or you can use the "Reset User Password" action here to mint their first password. A vestigial "Create Account" link will still render in the login page footer — it is baked into the static JavaScript bundle at upstream build time — but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.': 37,
-
-  // actions/setupJitsi.ts
-  'Jitsi URL': 41,
-  'No Jitsi URLs available — install the Jitsi package from the StartOS marketplace and start it first.': 42,
-  'Which Jitsi URL Cal.diy should use when generating meeting links. Pick the URL bookers will click — usually a custom domain or .local, not the LAN IP.': 43,
-  'Set Up Self-Hosted Jitsi': 44,
-  'Configure Cal.diy to use a locally-installed Jitsi Meet instance as the video provider. Requires the Jitsi package from the StartOS marketplace. Once configured, Cal.diy will route bookings whose event types choose "Jitsi Video" through your local Jitsi server instead of the public meet.jit.si default.': 45,
-  "Run this only after installing and starting Jitsi. If you change the Jitsi URL later (or uninstall Jitsi), re-run this action with the new URL or pre-existing booking links will be broken. The same URL-change side effects that apply to Cal.diy's primary URL apply here.": 46,
-  'Selected Jitsi URL is no longer available. Ensure Jitsi is installed and running, then re-run this action.': 47,
-  'Cal.diy has not synced the Jitsi app row yet. Wait a minute for the app-store sync to complete after first boot, then re-run.': 48,
-  'Jitsi configured': 49,
-  'Cal.diy will now use ${url} for Jitsi meeting links. Create or edit an event type and pick "Jitsi Video" under Location to use it.': 50,
 } as const
 
 /**
