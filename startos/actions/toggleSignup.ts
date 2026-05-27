@@ -1,7 +1,6 @@
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { postgresDb, postgresUser } from '../utils'
 
 export const toggleSignup = sdk.Action.withoutInput(
   'toggle-signup',
@@ -27,45 +26,25 @@ export const toggleSignup = sdk.Action.withoutInput(
         : i18n(
             'After disabling, add new users from the Cal.diy admin console (Settings → Admin → Users → Add). The new user signs in via Forgot Password (SMTP required) or you can use the "Reset User Password" action here to mint their first password. A vestigial "Create Account" link will still render in the login page footer — it is baked into the static JavaScript bundle at upstream build time — but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.',
           ),
-      allowedStatuses: 'only-running',
+      allowedStatuses: 'any',
       group: null,
       visibility: 'enabled',
     }
   },
 
+  // Flip the bool in store.json. The web daemon reads it reactively via
+  // .const(effects) and restarts with NEXT_PUBLIC_DISABLE_SIGNUP updated.
+  // No SQL needed: cal's signup gate is
+  //   `process.env.NEXT_PUBLIC_DISABLE_SIGNUP === "true" || dbFeatureFlag`
+  // and the env half of the OR is sufficient. The DB Feature row stays at
+  // its upstream-seeded `enabled: false`, which only matters when the env
+  // half is false — which is precisely the "signups enabled" state, where
+  // we don't want the DB flag to block. Touching the DB would only force
+  // `allowedStatuses: 'only-running'` for no real gain.
   async ({ effects }) => {
     const disabled = await storeJson
       .read((s) => s.signupDisabled)
       .const(effects)
-    const next = !disabled
-
-    const postgresPassword = await storeJson
-      .read((s) => s.postgresPassword)
-      .once()
-    if (!postgresPassword) {
-      throw new Error(i18n('Database password not found in store.json'))
-    }
-
-    const sql = `INSERT INTO "Feature" (slug, enabled, description, "type", "createdAt", "updatedAt")
-VALUES ('disable-signup', ${next}, 'Enable to prevent users from signing up', 'OPERATIONAL', NOW(), NOW())
-ON CONFLICT (slug) DO UPDATE SET enabled = EXCLUDED.enabled, "updatedAt" = NOW();`
-
-    await sdk.SubContainer.withTemp(
-      effects,
-      { imageId: 'postgres' },
-      sdk.Mounts.of(),
-      'cal-toggle-signup',
-      async (sub) => {
-        await sub.execFail([
-          'sh',
-          '-c',
-          `PGPASSWORD='${postgresPassword}' psql -h 127.0.0.1 -U ${postgresUser} -d ${postgresDb} -v ON_ERROR_STOP=1 <<'SQL_EOF'
-${sql}
-SQL_EOF`,
-        ])
-      },
-    )
-
-    await storeJson.merge(effects, { signupDisabled: next })
+    await storeJson.merge(effects, { signupDisabled: !disabled })
   },
 )

@@ -23,6 +23,19 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const webappUrl = store.url ?? builtWebappUrl
   const signupDisabled = store.signupDisabled ?? false
 
+  // ALLOWED_HOSTNAMES is interpolated by cal into `[${env}]` and JSON.parsed
+  // (see packages/lib/constants.ts), so the value must be comma-separated
+  // quoted strings, no outer brackets. Pre-fill the chosen primary URL's
+  // host so the package matches whatever address users actually reach it on.
+  // Note: in cal.diy v6.2.0 this constant has no production consumers
+  // (organizations were removed upstream), so this is defensive only.
+  let allowedHostnames = ''
+  try {
+    allowedHostnames = `"${new URL(webappUrl).host}"`
+  } catch {
+    // Ignore; webappUrl falls back to builtWebappUrl which is always a valid URL
+  }
+
   let smtpCredentials: T.SmtpValue | null = null
   if (store.smtp?.selection === 'system') {
     smtpCredentials = await sdk.getSystemSmtp(effects).const()
@@ -171,6 +184,7 @@ exec crond -f -l 8
           NEXT_PUBLIC_WEBSITE_URL: webappUrl,
           BUILT_NEXT_PUBLIC_WEBAPP_URL: builtWebappUrl,
           NEXT_PUBLIC_DISABLE_SIGNUP: signupDisabled ? 'true' : '',
+          ALLOWED_HOSTNAMES: allowedHostnames,
           // Cron sidecar uses this to authenticate against /api/cron/* and
           // /api/tasks/*. Same key is baked into the crontab at start.
           CRON_API_KEY: cronApiKey,

@@ -66,7 +66,7 @@ On first install:
    - `nextAuthSecret` — `NEXTAUTH_SECRET`, used to sign session tokens.
    - `calendsoEncryptionKey` — `CALENDSO_ENCRYPTION_KEY`, used by Cal.diy for symmetric encryption of integration credentials.
    - `cronApiKey` — `CRON_API_KEY`, shared between the cal-diy daemon (which validates incoming cron requests) and the cron sidecar (which authenticates outgoing calls).
-2. **Open signups are disabled by default** (`signupDisabled: true` in `store.json` → `NEXT_PUBLIC_DISABLE_SIGNUP=true` to the daemon, plus the `disable-signup` row in Cal.diy's `Feature` table is set to `enabled=true`).
+2. **Open signups are disabled by default** (`signupDisabled: true` in `store.json` → `NEXT_PUBLIC_DISABLE_SIGNUP=true` to the daemon). Cal.com's signup gate is `process.env.NEXT_PUBLIC_DISABLE_SIGNUP === "true" || <DB feature flag>`, so the env half short-circuits and blocks. The DB-side `disable-signup` Feature row stays at upstream's seeded `enabled: false` and is irrelevant unless the env half is unset.
 3. The `taskSetPrimaryUrl` init step pre-selects the service's `.local` URL as the primary URL so the package boots into a usable state on the LAN with no further configuration.
 4. PostgreSQL starts and the `cal-diy` daemon waits for it.
 5. The `cal-diy` daemon runs `prisma migrate deploy` against the empty database, seeds the bundled app store, then launches Next.js.
@@ -93,6 +93,7 @@ Only enable open signups if you specifically want strangers to self-register.
 | `BUILT_NEXT_PUBLIC_WEBAPP_URL` (fixed at `http://localhost:3000` to match the upstream bake-time value, so `replace-placeholder.sh` can do its job) | |
 | `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` (sourced from the "Configure SMTP" action) | |
 | `NEXT_PUBLIC_DISABLE_SIGNUP` (sourced from the "Enable/Disable Signups" action) | |
+| `ALLOWED_HOSTNAMES` (derived from the primary URL's hostname; dead code in cal.diy v6.2.0 but pre-filled defensively) | |
 | `CRON_API_KEY` (auto-generated at install; shared with the cron sidecar) | |
 | `ENABLE_ASYNC_TASKER=true`, `TASKER_ENABLE_EMAILS=1`, `TASKER_ENABLE_WEBHOOKS=1` (enable cal.com's tasker so `/api/tasks/cron` has queued work to drain) | |
 | `CALCOM_TELEMETRY_DISABLED=1`, `NEXT_TELEMETRY_DISABLED=1` | |
@@ -121,7 +122,7 @@ Only enable open signups if you specifically want strangers to self-register.
 | ---------------------- | ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Set Primary URL        | `set-primary-url` | Any status     | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start. |
 | Configure SMTP         | `manage-smtp`     | Any status     | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                              |
-| Enable/Disable Signups | `toggle-signup`   | Only running   | Toggles new account creation on the instance. Sets `NEXT_PUBLIC_DISABLE_SIGNUP` on the daemon (server-rendered signup page + signup API both honour it) and upserts the `disable-signup` row in Cal.diy's `Feature` table for belt-and-suspenders enforcement. The vestigial "Create Account" link in the login footer is baked into the client bundle and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error. |
+| Enable/Disable Signups | `toggle-signup`   | Any status     | Flips `signupDisabled` in `store.json`; the daemon picks it up reactively and the next start passes `NEXT_PUBLIC_DISABLE_SIGNUP` to cal. Cal's signup gate is `env-or-dbFlag`, and we rely entirely on the env half. The vestigial "Create Account" link in the login footer is baked into the client bundle and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error. |
 | Reset User Password    | `reset-password`  | Only running   | Generates a 22-character random password, hashes it with `bcryptjs` (cost 12) inside a temp container of the `main` image, and upserts it into the `UserPassword` row joined to `User.email`. Surfaces the new password back to the StartOS UI as a masked, copyable single-value result. |
 
 A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and re-prompts the user (as a critical task) if the chosen URL later becomes unavailable.
@@ -233,6 +234,7 @@ startos_managed_env_vars:
   - EMAIL_SERVER_USER
   - EMAIL_SERVER_PASSWORD
   - NEXT_PUBLIC_DISABLE_SIGNUP
+  - ALLOWED_HOSTNAMES
   - CRON_API_KEY
   - ENABLE_ASYNC_TASKER
   - TASKER_ENABLE_EMAILS
