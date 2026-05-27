@@ -45,6 +45,17 @@ Open signups are off by default, so you don't have to do anything to lock the in
 
 You only need to run the **Enable/Disable Signups** action if you specifically want strangers on the public internet to be able to create their own accounts on your instance — uncommon for personal scheduling.
 
+## Video conferencing
+
+When a bookable event is set to use video, Cal.diy adds a meeting link to the booking confirmation. Cal.diy already ships native support for several video providers — pick whichever fits your setup. Configure them inside Cal.diy at **Settings → Apps**.
+
+- **Jitsi Meet** *(recommended for StartOS self-hosters).* Cal.diy's Jitsi app is preinstalled; with no further configuration, meeting links default to the public `https://meet.jit.si/cal` server. If you'd rather keep everything local, install the **Jitsi** package from the StartOS marketplace, then in Cal.diy go to **Settings → Apps → Jitsi Video** and set the host URL to your StartOS Jitsi instance. No API key, no OAuth.
+- **Nextcloud Talk.** If you already run **Nextcloud** on StartOS (Nextcloud is also packaged), Cal.diy can route meetings through Nextcloud Talk. Settings → Apps → Nextcloud Talk; provide the connection details when prompted. Requires the Talk app enabled inside Nextcloud.
+- **Daily.co** *(default, hosted)*. Requires a free API key from <https://daily.co>. Drop it in via **Settings → Apps → Daily.co**. Easiest out-of-box but not self-hosted.
+- **Other supported providers** in the app store include Google Meet, Microsoft Teams, Zoom, Whereby, Element Call, Riverside, Huddle01, Webex, Tandem, Salesroom, Sylaps, Shimmer, Sirius — each requires the relevant provider account / API credentials.
+
+For everyday self-hosted use, the Jitsi route gives you the smoothest experience: install Jitsi on StartOS, point Cal.diy at it, done.
+
 ## Using Cal.diy
 
 ### Web interface

@@ -195,6 +195,13 @@ exec crond -f -l 8
           TASKER_ENABLE_WEBHOOKS: '1',
           CALCOM_TELEMETRY_DISABLED: '1',
           NEXT_TELEMETRY_DISABLED: '1',
+          // Cal's proxy.ts disables CSP entirely when CSP_POLICY is unset.
+          // Setting it turns on nonce-based CSP only on /auth/login + /login
+          // (the credential-theft-risk pages). 'non-strict' relaxes style-src
+          // to 'unsafe-inline' but keeps the nonce-based script-src + strict-
+          // dynamic — the actual XSS defense. Strict mode would block inline
+          // styles on the login page; cosmetically risky for no real win.
+          CSP_POLICY: 'non-strict',
           NODE_ENV: 'production',
           ...smtpEnv,
         },

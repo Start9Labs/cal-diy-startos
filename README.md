@@ -96,6 +96,7 @@ Only enable open signups if you specifically want strangers to self-register.
 | `ALLOWED_HOSTNAMES` (derived from the primary URL's hostname; dead code in cal.diy v6.2.0 but pre-filled defensively) | |
 | `CRON_API_KEY` (auto-generated at install; shared with the cron sidecar) | |
 | `ENABLE_ASYNC_TASKER=true`, `TASKER_ENABLE_EMAILS=1`, `TASKER_ENABLE_WEBHOOKS=1` (enable cal.com's tasker so `/api/tasks/cron` has queued work to drain) | |
+| `CSP_POLICY=non-strict` (turns on cal's nonce-based CSP on `/auth/login` and `/login`; relaxes `style-src` to `'unsafe-inline'` to avoid breaking inline styles on the login page while keeping the nonce-based `script-src` + `strict-dynamic` defense — the actual XSS win) | |
 | `CALCOM_TELEMETRY_DISABLED=1`, `NEXT_TELEMETRY_DISABLED=1` | |
 | `NODE_ENV=production`                    |                                                             |
 
@@ -193,7 +194,7 @@ None.
 ## What Is Unchanged from Upstream
 
 - All scheduling, availability, event-type, and booking functionality
-- All upstream-provided calendar / video integrations (Google, Apple, Microsoft, Zoom, Daily, etc. — configurable through the Cal.diy UI once you provide your own credentials)
+- All upstream-provided calendar / video integrations (Google, Apple, Microsoft, Zoom, Daily, etc. — configurable through the Cal.diy UI once you provide your own credentials). The **Jitsi Video** and **Nextcloud Talk** apps are particularly StartOS-friendly: both upstream-packaged services (`jitsi-startos`, `nextcloud-startos`) compose cleanly with Cal.diy via the in-app configuration in **Settings → Apps**, no env vars or custom integration code required from this package. Jitsi works out of the box (defaults to public meet.jit.si; point it at a self-hosted Jitsi for fully local video).
 - The full Cal.diy admin dashboard
 - The Cal.diy public booking pages
 
@@ -235,6 +236,7 @@ startos_managed_env_vars:
   - EMAIL_SERVER_PASSWORD
   - NEXT_PUBLIC_DISABLE_SIGNUP
   - ALLOWED_HOSTNAMES
+  - CSP_POLICY
   - CRON_API_KEY
   - ENABLE_ASYNC_TASKER
   - TASKER_ENABLE_EMAILS
