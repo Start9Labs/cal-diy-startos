@@ -6,7 +6,6 @@ You've installed Cal.diy — the community-driven, fully open-source edition of 
 
 - [Cal.com documentation](https://cal.com/docs) — the official feature documentation. Almost everything described there applies to Cal.diy, minus the Enterprise-only features that were removed.
 - [Cal.diy upstream repository](https://github.com/calcom/cal.diy) — source, issues, and discussions for the open-source fork.
-- [Cal.com community Slack](https://go.cal.com/slack) — upstream community support.
 
 ## What you get on StartOS
 
