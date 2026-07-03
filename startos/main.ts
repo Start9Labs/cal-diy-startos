@@ -84,7 +84,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   }
   const smtpReady = !!smtpEnv.EMAIL_SERVER_HOST
 
-  const postgresSub = await sdk.SubContainer.of(
+  const postgresSub = sdk.SubContainer.of(
     effects,
     { imageId: 'postgres' },
     sdk.Mounts.of().mountVolume({
@@ -96,14 +96,14 @@ export const main = sdk.setupMain(async ({ effects }) => {
     'postgres-sub',
   )
 
-  const appSub = await sdk.SubContainer.of(
+  const appSub = sdk.SubContainer.of(
     effects,
     { imageId: 'main' },
     sdk.Mounts.of(),
     'cal-diy-sub',
   )
 
-  const cronSub = await sdk.SubContainer.of(
+  const cronSub = sdk.SubContainer.of(
     effects,
     { imageId: 'cron' },
     sdk.Mounts.of(),

@@ -1,5 +1,5 @@
 import { setupManifest } from '@start9labs/start-sdk'
-import { alertUninstall, long, short } from './i18n'
+import { long, short } from './i18n'
 
 const calVersion = 'v6.2.0'
 const calImage = 'calcom/cal.com'
@@ -45,14 +45,6 @@ export const manifest = setupManifest({
     // Cal.diy's web daemon idles ~750 MB and PostgreSQL adds ~200 MB. Sub-2 GB
     // boxes OOM during peak load (booking page renders + Prisma queries).
     ram: 2048,
-  },
-  alerts: {
-    install: null,
-    update: null,
-    uninstall: alertUninstall,
-    restore: null,
-    start: null,
-    stop: null,
   },
   dependencies: {},
 })

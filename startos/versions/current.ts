@@ -1,13 +1,18 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '6.2.0:0',
+  version: '6.2.0:1',
   releaseNotes: {
-    en_US: 'Initial Cal.diy release for StartOS.',
-    es_ES: 'Versión inicial de Cal.diy para StartOS.',
-    de_DE: 'Erste Cal.diy-Veröffentlichung für StartOS.',
-    pl_PL: 'Pierwsze wydanie Cal.diy dla StartOS.',
-    fr_FR: 'Première version de Cal.diy pour StartOS.',
+    en_US:
+      'Internal updates (start-sdk 2.0.x). Fixes database backups that could previously be created empty.',
+    es_ES:
+      'Actualizaciones internas (start-sdk 2.0.x). Corrige las copias de seguridad de la base de datos que antes podían crearse vacías.',
+    de_DE:
+      'Interne Aktualisierungen (start-sdk 2.0.x). Behebt Datenbank-Backups, die zuvor leer erstellt werden konnten.',
+    pl_PL:
+      'Aktualizacje wewnętrzne (start-sdk 2.0.x). Naprawia kopie zapasowe bazy danych, które wcześniej mogły być tworzone jako puste.',
+    fr_FR:
+      'Mises à jour internes (start-sdk 2.0.x). Corrige les sauvegardes de base de données qui pouvaient auparavant être créées vides.',
   },
   migrations: {
     up: async ({ effects }) => {},

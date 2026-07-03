@@ -76,3 +76,7 @@ If the URL you previously selected becomes unavailable (for example, because you
 - Cal.diy does not include the Enterprise-only features that Cal.com offers — Teams, Organizations, Insights, Workflows, and SSO/SAML are not present. This is an upstream choice; it is not specific to the StartOS package.
 - Changing the primary URL triggers a static-asset rewrite inside the container on the next start; expect tens of seconds of extra startup time.
 - Cal.diy is intended by upstream for personal, non-production self-hosting. Production-grade deployments are out of scope for both upstream and this package.
+
+## Uninstalling
+
+Uninstalling Cal.diy will permanently delete all of your bookings, event types, integrations, and user accounts. Make sure to export anything you want to keep first.
