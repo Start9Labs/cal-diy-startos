@@ -84,6 +84,24 @@ export const main = sdk.setupMain(async ({ effects }) => {
   }
   const smtpReady = !!smtpEnv.EMAIL_SERVER_HOST
 
+  // Stripe payments. cal's start.sh runs seed-app-store.ts on every boot, which
+  // seeds and enables the Stripe app only when ALL of these env vars are set —
+  // the four credentials plus PAYMENT_FEE_FIXED/PAYMENT_FEE_PERCENTAGE (the
+  // platform's application-fee cut, which is zero for a self-hoster who is
+  // their own platform). The manage-stripe action's union guarantees all four
+  // are present whenever selection === 'enabled'.
+  const stripe = store.stripe
+  const stripeEnv: Record<string, string> = {}
+  if (stripe?.selection === 'enabled') {
+    stripeEnv.NEXT_PUBLIC_STRIPE_PUBLIC_KEY = stripe.value.publishableKey
+    stripeEnv.STRIPE_PRIVATE_KEY = stripe.value.secretKey
+    stripeEnv.STRIPE_CLIENT_ID = stripe.value.connectClientId
+    stripeEnv.STRIPE_WEBHOOK_SECRET = stripe.value.webhookSecret
+    stripeEnv.PAYMENT_FEE_FIXED = '0'
+    stripeEnv.PAYMENT_FEE_PERCENTAGE = '0'
+  }
+  const stripeReady = !!stripeEnv.STRIPE_PRIVATE_KEY
+
   const postgresSub = sdk.SubContainer.of(
     effects,
     { imageId: 'postgres' },
@@ -204,6 +222,7 @@ exec crond -f -l 8
           CSP_POLICY: 'non-strict',
           NODE_ENV: 'production',
           ...smtpEnv,
+          ...stripeEnv,
         },
       },
       ready: {
@@ -267,6 +286,26 @@ exec crond -f -l 8
                 result: 'disabled',
                 message: i18n(
                   'SMTP not configured. Booking confirmations and magic-link sign-in will not send email until you run the "Configure SMTP" action.',
+                ),
+              },
+      },
+      requires: ['cal-diy'],
+    })
+    .addHealthCheck('payments', {
+      ready: {
+        display: i18n('Payments'),
+        fn: async () =>
+          stripeReady
+            ? {
+                result: 'success',
+                message: i18n(
+                  'Stripe configured — calendar owners can connect their Stripe account in Cal.diy and collect payment for paid bookings.',
+                ),
+              }
+            : {
+                result: 'disabled',
+                message: i18n(
+                  'Stripe not configured. Run the "Configure Stripe Payments" action to accept payment for bookings.',
                 ),
               },
       },

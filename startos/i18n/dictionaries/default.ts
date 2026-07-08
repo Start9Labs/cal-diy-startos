@@ -55,6 +55,27 @@ const dict = {
   'Signups are currently enabled. Run this action to prevent new account creation. Existing users are unaffected; only new signups are blocked.': 35,
   'Most self-hosted instances should NOT enable open signups. Anyone who can reach this Cal.diy URL will be able to create an account. If you just need to add a few users you trust, leave signups disabled and add them from the Cal.diy admin console (Settings → Admin → Users → Add) instead — the new user signs in via the Forgot Password flow if SMTP is configured, or you can run the "Reset User Password" action here to mint their initial password and share it out-of-band. Only enable open signups if you specifically want strangers to self-register.': 36,
   'After disabling, add new users from the Cal.diy admin console (Settings → Admin → Users → Add). The new user signs in via Forgot Password (SMTP required) or you can use the "Reset User Password" action here to mint their first password. A vestigial "Create Account" link will still render in the login page footer — it is baked into the static JavaScript bundle at upstream build time — but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.': 37,
+
+  // actions/manageStripe.ts
+  'Configure Stripe Payments': 41,
+  'Let calendar owners collect payment for paid bookings via Stripe. In your Stripe dashboard, create a Connect platform and register this OAuth redirect URI: ${callbackUrl} — then add a webhook endpoint at ${webhookUrl} and paste its signing secret below. After you save the four values here, each owner connects their own Stripe account from the Apps page inside Cal.diy.': 42,
+  'Stripe must reach Cal.diy over the public internet. Your primary URL is ${url} — if that is a .local, LAN, or Tor (.onion) address, Stripe OAuth and webhooks will not work; add a custom domain and set it as your primary URL first. Saving restarts Cal.diy.': 43,
+  'Publishable key': 44,
+  'Your Stripe publishable key, from Developers → API keys.': 45,
+  'Secret key': 46,
+  'Your Stripe secret key, from Developers → API keys. Stored securely and never displayed back.': 47,
+  'Connect client ID': 48,
+  'Your Stripe Connect OAuth client ID, from Connect → Settings → Integration.': 49,
+  'Webhook signing secret': 50,
+  'The signing secret of the webhook endpoint you add in Stripe, using the webhook URL in the description above.': 51,
+  'Stripe Payments': 55,
+  Enabled: 56,
+  Disabled: 57,
+
+  // main.ts (payments health check)
+  Payments: 52,
+  'Stripe configured — calendar owners can connect their Stripe account in Cal.diy and collect payment for paid bookings.': 53,
+  'Stripe not configured. Run the "Configure Stripe Payments" action to accept payment for bookings.': 54,
 } as const
 
 /**

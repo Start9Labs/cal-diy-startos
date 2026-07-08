@@ -13,6 +13,7 @@ You've installed Cal.diy — the community-driven, fully open-source edition of 
 - StartOS generates the required secrets (database password, NextAuth session secret, and the symmetric encryption key Cal.diy uses to protect stored integration credentials) at install time. You never need to write them down.
 - A **Set Primary URL** action lets you tell Cal.diy which of its URLs (LAN IP, `.local`, Tor, or a custom domain you've added) to use for booking links, magic-link sign-in, and email content. The package pre-selects your `.local` URL on install so it works on the LAN immediately.
 - A **Configure SMTP** action lets you supply (or borrow from StartOS) the SMTP credentials Cal.diy needs to send booking confirmations, reminders, and magic-link sign-in messages.
+- A **Configure Stripe Payments** action lets you set up Stripe so you can charge for paid bookings — enter your Stripe keys once instead of hand-editing a config file, then each calendar owner links their own Stripe account inside Cal.diy. (Requires a public domain — see "Accepting payments (Stripe)" below.)
 - **Open signups are off by default** — only the very first admin can be created from the web form; all subsequent users are added by the admin through Cal.diy's own admin console (no risk that a random LAN visitor signs themselves in before you finish setting up). An **Enable/Disable Signups** action lets you flip this if you specifically want to allow public registration.
 - A **Reset User Password** action generates a new password for a given email address, useful if you ever lose your password and can't rely on email-based recovery.
 - **Booking reminders, OAuth token refresh, calendar feed syncs, and workflow emails just work** — a tiny background scheduler runs the upstream cron jobs on the documented schedule. (Cal.com's hosted product gets these from Vercel cron; we bundle our own.)
@@ -55,6 +56,27 @@ When a bookable event is set to use video, Cal.diy adds a meeting link to the bo
 
 For everyday self-hosted use, the Jitsi route gives you the smoothest experience: install Jitsi on StartOS, point Cal.diy at it, done.
 
+## Accepting payments (Stripe)
+
+Cal.diy can collect payment for paid bookings through Stripe. This is optional — skip it entirely if your bookings are free.
+
+**You need a public domain first.** Stripe has to reach Cal.diy over the internet to complete the account-linking (OAuth) handshake and to deliver webhooks, so a `.local`, LAN, or Tor (`.onion`) address will not work. Add a custom domain to the **Web UI** interface in StartOS and make it your primary URL (the **Set Primary URL** action) before you start.
+
+Then, in your [Stripe dashboard](https://dashboard.stripe.com):
+
+1. Create a **Connect** platform (Connect → Get started). This gives you a **client ID** that starts with `ca_`.
+2. Under **Connect → Settings → Integration**, add this **OAuth redirect URI** — the **Configure Stripe Payments** action displays the exact value for your domain:
+   `https://<your-domain>/api/integrations/stripepayment/callback`
+3. Under **Developers → Webhooks**, add an endpoint at the URL the action displays:
+   `https://<your-domain>/api/integrations/stripepayment/webhook`
+   Stripe then shows a **signing secret** that starts with `whsec_`.
+4. Copy your **publishable key** (`pk_`) and **secret key** (`sk_`) from **Developers → API keys**.
+5. Run the **Configure Stripe Payments** action, choose **Enabled**, and paste in the four values (choose **Disabled** later to turn Stripe off). Cal.diy restarts and enables the Stripe app.
+6. Sign in to Cal.diy, open **Apps**, find **Stripe**, and click **Connect** to link the Stripe account that should receive the money. Each calendar owner links their own account.
+7. On any event type, open its **Apps** tab and turn on **Stripe** to set a price and currency for that booking.
+
+Payments go straight to the connected Stripe account — this package adds no platform fee.
+
 ## Using Cal.diy
 
 ### Web interface
@@ -65,6 +87,7 @@ The Web UI is the full Cal.diy app — your scheduling dashboard, event-type edi
 
 - **Set Primary URL** — change which URL Cal.diy uses for outbound links. Run it after adding a custom domain in StartOS, or after you decide to expose Cal.diy over Tor instead of the LAN. Restarts the service. **Safe at any time mechanically — but if you change it after Cal.diy has been in use, expect to:** re-register the OAuth redirect URI with every connected calendar/video provider and reconnect each integration here (the callback host they recorded no longer matches), re-sign-in (NextAuth session cookies are tied to the URL's domain), and update any booking links, embed snippets, or email signatures you have shared externally with the old URL. Links inside already-sent booking confirmation emails will continue to point at the old URL.
 - **Configure SMTP** — set, change, or disable outbound email. Run it to enable booking emails, or to swap from your own SMTP provider to StartOS system SMTP (or vice versa).
+- **Configure Stripe Payments** — enter your platform Stripe credentials so calendar owners can charge for paid bookings. Requires a public HTTPS domain; the action shows the exact redirect and webhook URLs to register in your Stripe dashboard. See "Accepting payments (Stripe)" above for the full walkthrough.
 - **Enable/Disable Signups** — close the instance to new account creation, or re-open it. The action's name reflects the current state. Note that the "Create Account" link in the login page footer will still render even when signups are disabled (it's compiled into the static JavaScript bundle by upstream); clicking it lands on a "Signup is disabled" error page.
 - **Reset User Password** — generate a new password for the user with the given email. The new password is shown to you once, masked and copyable. Only effective for accounts that authenticate via password — users who sign in only via OAuth (Google, Microsoft, etc.) are unaffected.
 

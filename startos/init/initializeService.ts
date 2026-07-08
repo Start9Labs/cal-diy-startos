@@ -33,6 +33,7 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
       calendsoEncryptionKey,
       cronApiKey,
       smtp: { selection: 'disabled', value: {} },
+      stripe: { selection: 'disabled' },
       signupDisabled: true,
     })
   } else {
