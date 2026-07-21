@@ -52,7 +52,7 @@ Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch man
 
 | Volume    | Mount Point             | Purpose                                                              |
 | --------- | ----------------------- | -------------------------------------------------------------------- |
-| `startos` | StartOS-managed         | `store.json` — generated secrets, selected primary URL, and SMTP config |
+| `startos` | StartOS-managed         | `store.json` — generated secrets, selected primary URL, SMTP config, and Stripe credentials |
 | `db`      | `/var/lib/postgresql`   | PostgreSQL data directory                                            |
 
 ---
@@ -86,13 +86,14 @@ Only enable open signups if you specifically want strangers to self-register.
 
 | StartOS-Managed                          | Upstream-Managed                                            |
 | ---------------------------------------- | ----------------------------------------------------------- |
-| `DATABASE_URL`, `DATABASE_DIRECT_URL`, `DATABASE_HOST` | Calendar / video / payment integration credentials (set inside the Cal.diy UI) |
+| `DATABASE_URL`, `DATABASE_DIRECT_URL`, `DATABASE_HOST` | Calendar / video integration credentials, and each owner's connected Stripe account (set inside the Cal.diy UI) |
 | `NEXTAUTH_SECRET`, `NEXTAUTH_URL`        | All user accounts, event types, availability, and bookings |
 | `CALENDSO_ENCRYPTION_KEY`                |                                                             |
 | `NEXT_PUBLIC_WEBAPP_URL`, `NEXT_PUBLIC_WEBSITE_URL` (sourced from the "Set Primary URL" action) |  |
 | `BUILT_NEXT_PUBLIC_WEBAPP_URL` (fixed at `http://localhost:3000` to match the upstream bake-time value, so `replace-placeholder.sh` can do its job) | |
 | `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` (sourced from the "Configure SMTP" action) | |
 | `NEXT_PUBLIC_DISABLE_SIGNUP` (sourced from the "Enable/Disable Signups" action) | |
+| `NEXT_PUBLIC_STRIPE_PUBLIC_KEY`, `STRIPE_PRIVATE_KEY`, `STRIPE_CLIENT_ID`, `STRIPE_WEBHOOK_SECRET`, `PAYMENT_FEE_FIXED=0`, `PAYMENT_FEE_PERCENTAGE=0` (sourced from the "Configure Stripe Payments" action; emitted only when all four credentials are set. Upstream's boot-time `seed-app-store.ts` requires all six before it seeds and enables the Stripe app, and fees are zero because a self-hoster is their own Connect platform) | |
 | `ALLOWED_HOSTNAMES` (derived from the primary URL's hostname; dead code in cal.diy v6.2.0 but pre-filled defensively) | |
 | `CRON_API_KEY` (auto-generated at install; shared with the cron sidecar) | |
 | `ENABLE_ASYNC_TASKER=true`, `TASKER_ENABLE_EMAILS=1`, `TASKER_ENABLE_WEBHOOKS=1` (enable cal.com's tasker so `/api/tasks/cron` has queued work to drain) | |
@@ -123,6 +124,7 @@ Only enable open signups if you specifically want strangers to self-register.
 | ---------------------- | ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Set Primary URL        | `set-primary-url` | Any status     | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start. |
 | Configure SMTP         | `manage-smtp`     | Any status     | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                              |
+| Configure Stripe Payments | `manage-stripe` | Any status   | Enable or disable Stripe for paid bookings (a Disabled/Enabled union — Enabled requires all four platform credentials: publishable key, secret key, Connect client ID, webhook signing secret). Persisted to `store.json` and mapped to `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` / `STRIPE_PRIVATE_KEY` / `STRIPE_CLIENT_ID` / `STRIPE_WEBHOOK_SECRET` (+ `PAYMENT_FEE_*=0`) at daemon start; cal's boot-time `seed-app-store.ts` reads these to seed and enable the Stripe app. Inputs validate the `pk_`/`sk_`/`ca_`/`whsec_` prefixes and mask the two secrets. Requires a public HTTPS primary URL (Stripe must reach the OAuth callback + webhook); the action's description renders both URLs to register. |
 | Enable/Disable Signups | `toggle-signup`   | Any status     | Flips `signupDisabled` in `store.json`; the daemon picks it up reactively and the next start passes `NEXT_PUBLIC_DISABLE_SIGNUP` to cal. Cal's signup gate is `env-or-dbFlag`, and we rely entirely on the env half. The vestigial "Create Account" link in the login footer is baked into the client bundle and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error. |
 | Reset User Password    | `reset-password`  | Only running   | Generates a 22-character random password, hashes it with `bcryptjs` (cost 12) inside a temp container of the `main` image, and upserts it into the `UserPassword` row joined to `User.email`. Surfaces the new password back to the StartOS UI as a masked, copyable single-value result. |
 
@@ -135,7 +137,7 @@ A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and 
 **Included in backup:**
 
 - Full PostgreSQL dump of the `calendso` database (taken with `pg_dump` against the sidecar)
-- `startos` volume (preserves the generated secrets, primary URL, and SMTP config so a restore continues to decrypt existing integration credentials)
+- `startos` volume (preserves the generated secrets, primary URL, SMTP config, and Stripe credentials so a restore continues to decrypt existing integration credentials)
 
 **Restore behavior:** PostgreSQL is dump-restored before the `cal-diy` daemon starts.
 
@@ -150,6 +152,7 @@ A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and 
 | Background Jobs  | Static success while the cron sidecar daemon is up | "Cron sidecar is running. Booking reminders, OAuth credential refresh, calendar sync, and workflow emails fire on schedule." |
 | Primary URL      | Static success, displays the active URL | "Booking links, email confirmations, and magic-link logins all point at &lt;url&gt;..." |
 | Email Delivery   | Reflects whether SMTP is configured | Success: "SMTP configured" / Disabled: prompt to run the SMTP action     |
+| Payments         | Reflects whether Stripe is configured | Success: "Stripe configured — owners can connect their account…" / Disabled: prompt to run the Stripe action |
 
 The web check probes `/api/version` rather than just port-listening, so it doesn't go green until the Next.js router and Prisma client are actually serving requests. The 5-minute grace period covers Prisma migrations, app-store seeding, and (if the primary URL has changed) the `replace-placeholder.sh` sweep on every container start.
 
@@ -235,6 +238,12 @@ startos_managed_env_vars:
   - EMAIL_SERVER_USER
   - EMAIL_SERVER_PASSWORD
   - NEXT_PUBLIC_DISABLE_SIGNUP
+  - NEXT_PUBLIC_STRIPE_PUBLIC_KEY
+  - STRIPE_PRIVATE_KEY
+  - STRIPE_CLIENT_ID
+  - STRIPE_WEBHOOK_SECRET
+  - PAYMENT_FEE_FIXED
+  - PAYMENT_FEE_PERCENTAGE
   - ALLOWED_HOSTNAMES
   - CSP_POLICY
   - CRON_API_KEY
@@ -247,6 +256,7 @@ startos_managed_env_vars:
 actions:
   - set-primary-url
   - manage-smtp
+  - manage-stripe
   - toggle-signup
   - reset-password
 ```

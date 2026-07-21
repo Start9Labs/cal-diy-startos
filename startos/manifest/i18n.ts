@@ -18,16 +18,3 @@ export const long = {
   fr_FR:
     "Cal.diy est l'édition communautaire entièrement open source de Cal.com — une plateforme de planification pour réserver des réunions, gérer les disponibilités et connecter les calendriers. Hébergez votre propre système de réservation de rendez-vous sans dépendre d'un service tiers.",
 }
-
-export const alertUninstall = {
-  en_US:
-    'Uninstalling Cal.diy will permanently delete all of your bookings, event types, integrations, and user accounts. Make sure to export anything you want to keep first.',
-  es_ES:
-    'Desinstalar Cal.diy eliminará permanentemente todas tus reservas, tipos de eventos, integraciones y cuentas de usuario. Asegúrate de exportar cualquier cosa que quieras conservar primero.',
-  de_DE:
-    'Die Deinstallation von Cal.diy löscht endgültig alle deine Buchungen, Ereignistypen, Integrationen und Benutzerkonten. Stelle sicher, dass du vorher alles exportierst, was du behalten möchtest.',
-  pl_PL:
-    'Odinstalowanie Cal.diy trwale usunie wszystkie twoje rezerwacje, typy wydarzeń, integracje i konta użytkowników. Najpierw wyeksportuj wszystko, co chcesz zachować.',
-  fr_FR:
-    "La désinstallation de Cal.diy supprimera définitivement toutes vos réservations, types d'événements, intégrations et comptes utilisateurs. Assurez-vous d'exporter tout ce que vous souhaitez conserver au préalable.",
-}
