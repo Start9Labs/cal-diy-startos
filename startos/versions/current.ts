@@ -1,7 +1,7 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '6.2.0:2',
+  version: '6.2.0:3',
   releaseNotes: {
     en_US:
       'Adds a "Configure Stripe Payments" action to set up Stripe from the StartOS interface — no more editing .env by hand — so calendar owners can accept payment for paid bookings.',
