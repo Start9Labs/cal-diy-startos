@@ -35,14 +35,14 @@ Cal.diy is the community-driven, fully open-source edition of Cal.com — a sche
 
 ## Image and Container Runtime
 
-| Property      | Value                                                                |
-| ------------- | -------------------------------------------------------------------- |
-| App image     | `calcom/cal.com` (upstream Docker Hub; per-arch tags selected at build) |
-| Database      | `postgres:16-alpine`                                                 |
+| Property      | Value                                                                                                                                                                 |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App image     | `calcom/cal.com` (upstream Docker Hub; per-arch tags selected at build)                                                                                               |
+| Database      | `postgres:16-alpine`                                                                                                                                                  |
 | Cron sidecar  | `alpine:3.20 + curl` (built locally from `cron.Dockerfile`); runs `busybox crond` against the documented Vercel-style schedule from upstream's `apps/web/vercel.json` |
-| Architectures | x86_64, aarch64                                                      |
-| RAM           | 2048 MB declared in `hardwareRequirements`. Cal.diy + Postgres idles ~950 MB and spikes higher under load. |
-| Entrypoint    | Upstream `start.sh` (runs `replace-placeholder.sh` to swap the baked URL, then Prisma migrations + app-store seed, then Next.js) |
+| Architectures | x86_64, aarch64                                                                                                                                                       |
+| RAM           | 2048 MB declared in `hardwareRequirements`. Cal.diy + Postgres idles ~950 MB and spikes higher under load.                                                            |
+| Entrypoint    | Upstream `start.sh` (runs `replace-placeholder.sh` to swap the baked URL, then Prisma migrations + app-store seed, then Next.js)                                      |
 
 Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch manifest list. A thin Dockerfile in this repo selects the correct tag per architecture at pack time.
 
@@ -50,10 +50,10 @@ Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch man
 
 ## Volume and Data Layout
 
-| Volume    | Mount Point             | Purpose                                                              |
-| --------- | ----------------------- | -------------------------------------------------------------------- |
-| `startos` | StartOS-managed         | `store.json` — generated secrets, selected primary URL, SMTP config, and Stripe credentials |
-| `db`      | `/var/lib/postgresql`   | PostgreSQL data directory                                            |
+| Volume    | Mount Point           | Purpose                                                                                     |
+| --------- | --------------------- | ------------------------------------------------------------------------------------------- |
+| `startos` | StartOS-managed       | `store.json` — generated secrets, selected primary URL, SMTP config, and Stripe credentials |
+| `db`      | `/var/lib/postgresql` | PostgreSQL data directory                                                                   |
 
 ---
 
@@ -84,30 +84,30 @@ Only enable open signups if you specifically want strangers to self-register.
 
 ## Configuration Management
 
-| StartOS-Managed                          | Upstream-Managed                                            |
-| ---------------------------------------- | ----------------------------------------------------------- |
-| `DATABASE_URL`, `DATABASE_DIRECT_URL`, `DATABASE_HOST` | Calendar / video integration credentials, and each owner's connected Stripe account (set inside the Cal.diy UI) |
-| `NEXTAUTH_SECRET`, `NEXTAUTH_URL`        | All user accounts, event types, availability, and bookings |
-| `CALENDSO_ENCRYPTION_KEY`                |                                                             |
-| `NEXT_PUBLIC_WEBAPP_URL`, `NEXT_PUBLIC_WEBSITE_URL` (sourced from the "Set Primary URL" action) |  |
-| `BUILT_NEXT_PUBLIC_WEBAPP_URL` (fixed at `http://localhost:3000` to match the upstream bake-time value, so `replace-placeholder.sh` can do its job) | |
-| `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` (sourced from the "Configure SMTP" action) | |
-| `NEXT_PUBLIC_DISABLE_SIGNUP` (sourced from the "Enable/Disable Signups" action) | |
-| `NEXT_PUBLIC_STRIPE_PUBLIC_KEY`, `STRIPE_PRIVATE_KEY`, `STRIPE_CLIENT_ID`, `STRIPE_WEBHOOK_SECRET`, `PAYMENT_FEE_FIXED=0`, `PAYMENT_FEE_PERCENTAGE=0` (sourced from the "Configure Stripe Payments" action; emitted only when all four credentials are set. Upstream's boot-time `seed-app-store.ts` requires all six before it seeds and enables the Stripe app, and fees are zero because a self-hoster is their own Connect platform) | |
-| `ALLOWED_HOSTNAMES` (derived from the primary URL's hostname; dead code in cal.diy v6.2.0 but pre-filled defensively) | |
-| `CRON_API_KEY` (auto-generated at install; shared with the cron sidecar) | |
-| `ENABLE_ASYNC_TASKER=true`, `TASKER_ENABLE_EMAILS=1`, `TASKER_ENABLE_WEBHOOKS=1` (enable cal.com's tasker so `/api/tasks/cron` has queued work to drain) | |
-| `CSP_POLICY=non-strict` (turns on cal's nonce-based CSP on `/auth/login` and `/login`; relaxes `style-src` to `'unsafe-inline'` to avoid breaking inline styles on the login page while keeping the nonce-based `script-src` + `strict-dynamic` defense — the actual XSS win) | |
-| `CALCOM_TELEMETRY_DISABLED=1`, `NEXT_TELEMETRY_DISABLED=1` | |
-| `NODE_ENV=production`                    |                                                             |
+| StartOS-Managed                                                                                                                                                                                                                                                                                                                                                                                                                          | Upstream-Managed                                                                                                |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`, `DATABASE_DIRECT_URL`, `DATABASE_HOST`                                                                                                                                                                                                                                                                                                                                                                                   | Calendar / video integration credentials, and each owner's connected Stripe account (set inside the Cal.diy UI) |
+| `NEXTAUTH_SECRET`, `NEXTAUTH_URL`                                                                                                                                                                                                                                                                                                                                                                                                        | All user accounts, event types, availability, and bookings                                                      |
+| `CALENDSO_ENCRYPTION_KEY`                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                 |
+| `NEXT_PUBLIC_WEBAPP_URL`, `NEXT_PUBLIC_WEBSITE_URL` (sourced from the "Set Primary URL" action)                                                                                                                                                                                                                                                                                                                                          |                                                                                                                 |
+| `BUILT_NEXT_PUBLIC_WEBAPP_URL` (fixed at `http://localhost:3000` to match the upstream bake-time value, so `replace-placeholder.sh` can do its job)                                                                                                                                                                                                                                                                                      |                                                                                                                 |
+| `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` (sourced from the "Configure SMTP" action)                                                                                                                                                                                                                                                                       |                                                                                                                 |
+| `NEXT_PUBLIC_DISABLE_SIGNUP` (sourced from the "Enable/Disable Signups" action)                                                                                                                                                                                                                                                                                                                                                          |                                                                                                                 |
+| `NEXT_PUBLIC_STRIPE_PUBLIC_KEY`, `STRIPE_PRIVATE_KEY`, `STRIPE_CLIENT_ID`, `STRIPE_WEBHOOK_SECRET`, `PAYMENT_FEE_FIXED=0`, `PAYMENT_FEE_PERCENTAGE=0` (sourced from the "Configure Stripe Payments" action; emitted only when all four credentials are set. Upstream's boot-time `seed-app-store.ts` requires all six before it seeds and enables the Stripe app, and fees are zero because a self-hoster is their own Connect platform) |                                                                                                                 |
+| `ALLOWED_HOSTNAMES` (derived from the primary URL's hostname; dead code in cal.diy v6.2.0 but pre-filled defensively)                                                                                                                                                                                                                                                                                                                    |                                                                                                                 |
+| `CRON_API_KEY` (auto-generated at install; shared with the cron sidecar)                                                                                                                                                                                                                                                                                                                                                                 |                                                                                                                 |
+| `ENABLE_ASYNC_TASKER=true`, `TASKER_ENABLE_EMAILS=1`, `TASKER_ENABLE_WEBHOOKS=1` (enable cal.com's tasker so `/api/tasks/cron` has queued work to drain)                                                                                                                                                                                                                                                                                 |                                                                                                                 |
+| `CSP_POLICY=non-strict` (turns on cal's nonce-based CSP on `/auth/login` and `/login`; relaxes `style-src` to `'unsafe-inline'` to avoid breaking inline styles on the login page while keeping the nonce-based `script-src` + `strict-dynamic` defense — the actual XSS win)                                                                                                                                                            |                                                                                                                 |
+| `CALCOM_TELEMETRY_DISABLED=1`, `NEXT_TELEMETRY_DISABLED=1`                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                 |
+| `NODE_ENV=production`                                                                                                                                                                                                                                                                                                                                                                                                                    |                                                                                                                 |
 
 ---
 
 ## Network Access and Interfaces
 
-| Interface | Port | Protocol | Purpose            |
-| --------- | ---- | -------- | ------------------ |
-| Web UI    | 3000 | HTTP     | Cal.diy web app    |
+| Interface | Port | Protocol | Purpose         |
+| --------- | ---- | -------- | --------------- |
+| Web UI    | 3000 | HTTP     | Cal.diy web app |
 
 **Access methods:**
 
@@ -120,13 +120,13 @@ Only enable open signups if you specifically want strangers to self-register.
 
 ## Actions (StartOS UI)
 
-| Name                   | ID                | Availability   | Purpose                                                                                                                                                                                                                                                            |
-| ---------------------- | ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Set Primary URL        | `set-primary-url` | Any status     | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start. |
-| Configure SMTP         | `manage-smtp`     | Any status     | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                              |
-| Configure Stripe Payments | `manage-stripe` | Any status   | Enable or disable Stripe for paid bookings (a Disabled/Enabled union — Enabled requires all four platform credentials: publishable key, secret key, Connect client ID, webhook signing secret). Persisted to `store.json` and mapped to `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` / `STRIPE_PRIVATE_KEY` / `STRIPE_CLIENT_ID` / `STRIPE_WEBHOOK_SECRET` (+ `PAYMENT_FEE_*=0`) at daemon start; cal's boot-time `seed-app-store.ts` reads these to seed and enable the Stripe app. Inputs validate the `pk_`/`sk_`/`ca_`/`whsec_` prefixes and mask the two secrets. Requires a public HTTPS primary URL (Stripe must reach the OAuth callback + webhook); the action's description renders both URLs to register. |
-| Enable/Disable Signups | `toggle-signup`   | Any status     | Flips `signupDisabled` in `store.json`; the daemon picks it up reactively and the next start passes `NEXT_PUBLIC_DISABLE_SIGNUP` to cal. Cal's signup gate is `env-or-dbFlag`, and we rely entirely on the env half. The vestigial "Create Account" link in the login footer is baked into the client bundle and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error. |
-| Reset User Password    | `reset-password`  | Only running   | Generates a 22-character random password, hashes it with `bcryptjs` (cost 12) inside a temp container of the `main` image, and upserts it into the `UserPassword` row joined to `User.email`. Surfaces the new password back to the StartOS UI as a masked, copyable single-value result. |
+| Name                      | ID                | Availability | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------- | ----------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Set Primary URL           | `set-primary-url` | Any status   | Choose which of the service's non-local URLs (LAN, `.local`, Tor, custom domain) Cal.diy treats as canonical. Persisted to `store.json`; the daemon restarts and upstream's `replace-placeholder.sh` rewrites the statically-baked URL in `.next/` on next start.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Configure SMTP            | `manage-smtp`     | Any status   | Three-mode SMTP picker (disabled / system / custom) using the SDK's `smtpInputSpec`. Selected credentials are mapped to Cal.diy's `EMAIL_*` env vars at daemon start.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Configure Stripe Payments | `manage-stripe`   | Any status   | Enable or disable Stripe for paid bookings (a Disabled/Enabled union — Enabled requires all four platform credentials: publishable key, secret key, Connect client ID, webhook signing secret). Persisted to `store.json` and mapped to `NEXT_PUBLIC_STRIPE_PUBLIC_KEY` / `STRIPE_PRIVATE_KEY` / `STRIPE_CLIENT_ID` / `STRIPE_WEBHOOK_SECRET` (+ `PAYMENT_FEE_*=0`) at daemon start; cal's boot-time `seed-app-store.ts` reads these to seed and enable the Stripe app. Inputs validate the `pk_`/`sk_`/`ca_`/`whsec_` prefixes and mask the two secrets. Requires a public HTTPS primary URL (Stripe must reach the OAuth callback + webhook); the action's description renders both URLs to register. |
+| Enable/Disable Signups    | `toggle-signup`   | Any status   | Flips `signupDisabled` in `store.json`; the daemon picks it up reactively and the next start passes `NEXT_PUBLIC_DISABLE_SIGNUP` to cal. Cal's signup gate is `env-or-dbFlag`, and we rely entirely on the env half. The vestigial "Create Account" link in the login footer is baked into the client bundle and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error.                                                                                                                                                                                                                                                                                                    |
+| Reset User Password       | `reset-password`  | Only running | Generates a 22-character random password, hashes it with `bcryptjs` (cost 12) inside a temp container of the `main` image, and upserts it into the `UserPassword` row joined to `User.email`. Surfaces the new password back to the StartOS UI as a masked, copyable single-value result.                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and re-prompts the user (as a critical task) if the chosen URL later becomes unavailable.
 
@@ -145,14 +145,14 @@ A `taskSetPrimaryUrl` init step pre-selects a `.local` URL on first install and 
 
 ## Health Checks
 
-| Check            | Method                              | Messages                                                                 |
-| ---------------- | ----------------------------------- | ------------------------------------------------------------------------ |
-| Database         | `pg_isready` against the sidecar    | Success: "PostgreSQL is ready" / Loading: "Waiting for PostgreSQL to be ready" |
-| Web Interface    | HTTP GET `/api/version` against `http://127.0.0.1:3000` with a 5-minute grace period | Success: "Cal.diy is ready" / Error: "Cal.diy is not ready" |
-| Background Jobs  | Static success while the cron sidecar daemon is up | "Cron sidecar is running. Booking reminders, OAuth credential refresh, calendar sync, and workflow emails fire on schedule." |
-| Primary URL      | Static success, displays the active URL | "Booking links, email confirmations, and magic-link logins all point at &lt;url&gt;..." |
-| Email Delivery   | Reflects whether SMTP is configured | Success: "SMTP configured" / Disabled: prompt to run the SMTP action     |
-| Payments         | Reflects whether Stripe is configured | Success: "Stripe configured — owners can connect their account…" / Disabled: prompt to run the Stripe action |
+| Check           | Method                                                                               | Messages                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Database        | `pg_isready` against the sidecar                                                     | Success: "PostgreSQL is ready" / Loading: "Waiting for PostgreSQL to be ready"                                               |
+| Web Interface   | HTTP GET `/api/version` against `http://127.0.0.1:3000` with a 5-minute grace period | Success: "Cal.diy is ready" / Error: "Cal.diy is not ready"                                                                  |
+| Background Jobs | Static success while the cron sidecar daemon is up                                   | "Cron sidecar is running. Booking reminders, OAuth credential refresh, calendar sync, and workflow emails fire on schedule." |
+| Primary URL     | Static success, displays the active URL                                              | "Booking links, email confirmations, and magic-link logins all point at &lt;url&gt;..."                                      |
+| Email Delivery  | Reflects whether SMTP is configured                                                  | Success: "SMTP configured" / Disabled: prompt to run the SMTP action                                                         |
+| Payments        | Reflects whether Stripe is configured                                                | Success: "Stripe configured — owners can connect their account…" / Disabled: prompt to run the Stripe action                 |
 
 The web check probes `/api/version` rather than just port-listening, so it doesn't go green until the Next.js router and Prisma client are actually serving requests. The 5-minute grace period covers Prisma migrations, app-store seeding, and (if the primary URL has changed) the `replace-placeholder.sh` sweep on every container start.
 
@@ -162,15 +162,15 @@ Cal.com expects an external scheduler to hit `/api/cron/*` and `/api/tasks/*` on
 
 A small alpine sidecar bundled in this package runs `busybox crond` with this exact crontab (authenticated with the auto-generated `CRON_API_KEY`):
 
-| Schedule        | Endpoint                                       | Purpose                                                  |
-| --------------- | ---------------------------------------------- | -------------------------------------------------------- |
-| every minute    | `/api/tasks/cron`                              | Central tasker — drains queued reminder/webhook jobs     |
-| every 5 minutes | `/api/cron/calendar-subscriptions`             | Sync external calendar feeds                             |
-| every 5 minutes | `/api/cron/credentials`                        | Refresh OAuth access tokens for connected integrations   |
-| every 5 minutes | `/api/cron/selected-calendars`                 | Reconcile per-user selected calendar state               |
-| daily 03:00     | `/api/cron/calendar-subscriptions-cleanup`     | Drop stale calendar subscriptions                        |
-| every 12 hours  | `/api/cron/queuedFormResponseCleanup`          | Cleanup queued routing-form responses                    |
-| daily 00:00     | `/api/tasks/cleanup`                           | Tasker cleanup                                           |
+| Schedule        | Endpoint                                   | Purpose                                                |
+| --------------- | ------------------------------------------ | ------------------------------------------------------ |
+| every minute    | `/api/tasks/cron`                          | Central tasker — drains queued reminder/webhook jobs   |
+| every 5 minutes | `/api/cron/calendar-subscriptions`         | Sync external calendar feeds                           |
+| every 5 minutes | `/api/cron/credentials`                    | Refresh OAuth access tokens for connected integrations |
+| every 5 minutes | `/api/cron/selected-calendars`             | Reconcile per-user selected calendar state             |
+| daily 03:00     | `/api/cron/calendar-subscriptions-cleanup` | Drop stale calendar subscriptions                      |
+| every 12 hours  | `/api/cron/queuedFormResponseCleanup`      | Cleanup queued routing-form responses                  |
+| daily 00:00     | `/api/tasks/cleanup`                       | Tasker cleanup                                         |
 
 The cron sidecar runs in the same network namespace as the web daemon and calls `http://127.0.0.1:3000/...?apiKey=<CRON_API_KEY>`. Cal.com accepts the raw key via the `apiKey` query param or via an `Authorization` header.
 
@@ -188,9 +188,9 @@ None.
 2. **No enterprise features.** Cal.diy upstream has removed Teams, Organizations, Insights, Workflows, SSO/SAML, and other commercial features that exist in Cal.com. None of them are available here either.
 3. **Static URL rewrite on each start.** When the primary URL differs from the baked-in `http://localhost:3000`, the upstream `replace-placeholder.sh` rewrites the entire `.next/` directory on every container start. Expect tens of seconds of extra startup time after a URL change.
 4. **Changing the primary URL after Cal.diy has been in use has external side effects** that the package cannot paper over. The internal rewrite is idempotent (the `replace-placeholder.sh` `FROM` is always the baked `http://localhost:3000`, the `TO` is the new value), but: OAuth integrations need their redirect URI re-registered with each provider and reconnected here; all NextAuth sessions are invalidated because the cookie domain changed; booking links / iframe embeds / email signatures already shared externally with the old URL stop working; and links inside already-sent emails continue to point at the old URL. New emails, new booking pages, new embeds use the new URL.
-4. **Disabling signups leaves a vestigial UI link.** The "Create Account" link in the login page footer is baked into the static client bundle via `process.env.NEXT_PUBLIC_DISABLE_SIGNUP` and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error page. The signup API route and server-rendered signup page both block correctly.
-5. **Reset User Password only resets the local password.** Users who sign in via OAuth providers (Google, Microsoft, etc.) do not have a row in `UserPassword`; the action upserts a hash for them but those users still authenticate via OAuth and the hash is ignored.
-6. **Telemetry is disabled** via `CALCOM_TELEMETRY_DISABLED=1` and `NEXT_TELEMETRY_DISABLED=1`.
+5. **Disabling signups leaves a vestigial UI link.** The "Create Account" link in the login page footer is baked into the static client bundle via `process.env.NEXT_PUBLIC_DISABLE_SIGNUP` and cannot be hidden at runtime; clicking it redirects to a "Signup is disabled" error page. The signup API route and server-rendered signup page both block correctly.
+6. **Reset User Password only resets the local password.** Users who sign in via OAuth providers (Google, Microsoft, etc.) do not have a row in `UserPassword`; the action upserts a hash for them but those users still authenticate via OAuth and the hash is ignored.
+7. **Telemetry is disabled** via `CALCOM_TELEMETRY_DISABLED=1` and `NEXT_TELEMETRY_DISABLED=1`.
 
 ---
 
@@ -205,7 +205,7 @@ None.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development workflow.
+Build and development workflow follow the StartOS packaging guide: <https://docs.start9.com/packaging>. Keep `README.md`, `instructions.md`, and `AGENTS.md` in sync with any change to user-visible behavior or package structure.
 
 ---
 
