@@ -44,7 +44,8 @@ export const manifest = setupManifest({
   hardwareRequirements: {
     // Cal.diy's web daemon idles ~750 MB and PostgreSQL adds ~200 MB. Sub-2 GB
     // boxes OOM during peak load (booking page renders + Prisma queries).
-    ram: 2048,
+    // StartOS compares this against the host's RAM in bytes.
+    ram: 2 * 1024 ** 3,
   },
   dependencies: {},
 })

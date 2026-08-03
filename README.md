@@ -41,7 +41,7 @@ Cal.diy is the community-driven, fully open-source edition of Cal.com — a sche
 | Database      | `postgres:16-alpine`                                                                                                                                                  |
 | Cron sidecar  | `alpine:3.20 + curl` (built locally from `cron.Dockerfile`); runs `busybox crond` against the documented Vercel-style schedule from upstream's `apps/web/vercel.json` |
 | Architectures | x86_64, aarch64                                                                                                                                                       |
-| RAM           | 2048 MB declared in `hardwareRequirements`. Cal.diy + Postgres idles ~950 MB and spikes higher under load.                                                            |
+| RAM           | 2 GB declared in `hardwareRequirements.ram`, which StartOS compares against host RAM **in bytes**. Cal.diy + Postgres idles ~950 MB and spikes higher under load.     |
 | Entrypoint    | Upstream `start.sh` (runs `replace-placeholder.sh` to swap the baked URL, then Prisma migrations + app-store seed, then Next.js)                                      |
 
 Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch manifest list. A thin Dockerfile in this repo selects the correct tag per architecture at pack time.
