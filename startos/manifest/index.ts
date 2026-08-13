@@ -44,8 +44,10 @@ export const manifest = setupManifest({
   hardwareRequirements: {
     // Cal.diy's web daemon idles ~750 MB and PostgreSQL adds ~200 MB. Sub-2 GB
     // boxes OOM during peak load (booking page renders + Prisma queries).
-    // StartOS compares this against the host's RAM in bytes.
-    ram: 2 * 1024 ** 3,
+    // StartOS compares this against MemTotal in bytes, and MemTotal is a few
+    // hundred MiB under the advertised capacity, so a literal 2 GiB rejects
+    // every 2 GB machine. 1.5 GiB sits between the 1 and 2 GB tiers.
+    ram: 1.5 * 1024 ** 3,
   },
   dependencies: {},
 })
