@@ -35,14 +35,14 @@ Cal.diy is the community-driven, fully open-source edition of Cal.com — a sche
 
 ## Image and Container Runtime
 
-| Property      | Value                                                                                                                                                                 |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| App image     | `calcom/cal.com` (upstream Docker Hub; per-arch tags selected at build)                                                                                               |
-| Database      | `postgres:16-alpine`                                                                                                                                                  |
-| Cron sidecar  | `alpine:3.20 + curl` (built locally from `cron.Dockerfile`); runs `busybox crond` against the documented Vercel-style schedule from upstream's `apps/web/vercel.json` |
-| Architectures | x86_64, aarch64                                                                                                                                                       |
-| RAM           | 2 GB declared in `hardwareRequirements.ram`, which StartOS compares against host RAM **in bytes**. Cal.diy + Postgres idles ~950 MB and spikes higher under load.     |
-| Entrypoint    | Upstream `start.sh` (runs `replace-placeholder.sh` to swap the baked URL, then Prisma migrations + app-store seed, then Next.js)                                      |
+| Property      | Value                                                                                                                                                                                                                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App image     | `calcom/cal.com` (upstream Docker Hub; per-arch tags selected at build)                                                                                                                                                                                                                |
+| Database      | `postgres:16-alpine`                                                                                                                                                                                                                                                                   |
+| Cron sidecar  | `alpine:3.20 + curl` (built locally from `cron.Dockerfile`); runs `busybox crond` against the documented Vercel-style schedule from upstream's `apps/web/vercel.json`                                                                                                                  |
+| Architectures | x86_64, aarch64                                                                                                                                                                                                                                                                        |
+| RAM           | 2 GB minimum, declared in `hardwareRequirements.ram` as `1.5 * 1024 ** 3` — StartOS compares that **in bytes** against `MemTotal`, which sits below advertised capacity, so a literal 2 GiB would reject 2 GB machines. Cal.diy + Postgres idles ~950 MB and spikes higher under load. |
+| Entrypoint    | Upstream `start.sh` (runs `replace-placeholder.sh` to swap the baked URL, then Prisma migrations + app-store seed, then Next.js)                                                                                                                                                       |
 
 Upstream publishes amd64 and arm64 as separate tags rather than a multi-arch manifest list. A thin Dockerfile in this repo selects the correct tag per architecture at pack time.
 
