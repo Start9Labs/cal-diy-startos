@@ -17,7 +17,7 @@ curl -s "https://hub.docker.com/v2/repositories/calcom/cal.com/tags/<new-version
 curl -s "https://hub.docker.com/v2/repositories/calcom/cal.com/tags/<new-version>-arm/" | jq '.images[].architecture'
 ```
 
-(Upstream publishes amd64 and arm64 as separate tags — `vX.Y.Z` and `vX.Y.Z-arm` — rather than a multi-arch manifest list. The thin `Dockerfile` in this repo selects the right tag per target architecture at pack time.)
+(Upstream publishes amd64 and arm64 as separate tags — `vX.Y.Z` and `vX.Y.Z-arm` — rather than a multi-arch manifest list. The thin `Dockerfile` in this repo selects the right tag per target architecture at pack time.) Because of that split there is no `dockerTag` to use, so don't "simplify" the Dockerfile back to a plain pull.
 
 ## Applying the bump
 
