@@ -60,6 +60,10 @@ export default {
     55: 'Pagos con Stripe',
     56: 'Activado',
     57: 'Desactivado',
+    58: 'Reescribiendo los recursos web para la URL principal',
+    59: 'Aplicando migraciones de la base de datos (${done} de ${total})',
+    60: 'Aplicando migraciones de la base de datos',
+    61: 'Registrando aplicaciones',
   },
   de_DE: {
     0: 'Cal.diy wird gestartet!',
@@ -120,6 +124,10 @@ export default {
     55: 'Stripe-Zahlungen',
     56: 'Aktiviert',
     57: 'Deaktiviert',
+    58: 'Web-Assets werden für die primäre URL umgeschrieben',
+    59: 'Datenbankmigrationen werden angewendet (${done} von ${total})',
+    60: 'Datenbankmigrationen werden angewendet',
+    61: 'Apps werden registriert',
   },
   pl_PL: {
     0: 'Uruchamianie Cal.diy!',
@@ -180,6 +188,10 @@ export default {
     55: 'Płatności Stripe',
     56: 'Włączone',
     57: 'Wyłączone',
+    58: 'Przepisywanie zasobów webowych dla głównego URL',
+    59: 'Stosowanie migracji bazy danych (${done} z ${total})',
+    60: 'Stosowanie migracji bazy danych',
+    61: 'Rejestrowanie aplikacji',
   },
   fr_FR: {
     0: 'Démarrage de Cal.diy !',
@@ -240,5 +252,9 @@ export default {
     55: 'Paiements Stripe',
     56: 'Activé',
     57: 'Désactivé',
+    58: "Réécriture des ressources web pour l'URL principale",
+    59: 'Application des migrations de la base de données (${done} sur ${total})',
+    60: 'Application des migrations de la base de données',
+    61: 'Enregistrement des applications',
   },
 } satisfies Record<string, LangDict>

@@ -22,7 +22,7 @@ You've installed Cal.diy — the community-driven, fully open-source edition of 
 ## Getting set up
 
 1. Open Cal.diy's **Dashboard** tab and click the **Web UI** interface to open the web app.
-2. The first time you open it, Cal.diy will spend a couple of minutes running database migrations and seeding the bundled app store. The Web Interface health check turns green once it's ready — refresh the page if you opened it before that.
+2. The first time you open it, Cal.diy will spend a couple of minutes running database migrations and seeding the bundled app store. The Web Interface health check shows which step it is on, with a running count during the migrations, and turns green once it's ready — refresh the page if you opened it before that.
 3. Create your administrator account on the first-run setup screen (Cal.diy will redirect you there automatically). This is the **first-admin bootstrap** — it works even though open signups are disabled, because Cal.diy only allows it when the user table is empty. Fill in your basic profile, set your time zone, and pick your default working hours.
 4. Run the **Set Primary URL** action and choose the URL you want Cal.diy to treat as canonical. Use:
    - Your `.local` URL if Cal.diy is just for you and people on the same LAN.

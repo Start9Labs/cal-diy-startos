@@ -76,6 +76,12 @@ const dict = {
   Payments: 52,
   'Stripe configured — calendar owners can connect their Stripe account in Cal.diy and collect payment for paid bookings.': 53,
   'Stripe not configured. Run the "Configure Stripe Payments" action to accept payment for bookings.': 54,
+
+  // main.ts (web interface startup phases)
+  'Rewriting web assets for the primary URL': 58,
+  'Applying database migrations (${done} of ${total})': 59,
+  'Applying database migrations': 60,
+  'Registering apps': 61,
 } as const
 
 /**

@@ -154,6 +154,8 @@ CRONTAB
 exec crond -f -l 8
 `
 
+  let migrationTotal: string | undefined
+
   return sdk.Daemons.of(effects)
     .addDaemon('postgres', {
       subcontainer: postgresSub,
@@ -228,11 +230,49 @@ exec crond -f -l 8
       ready: {
         display: i18n('Web Interface'),
         gracePeriod: 300000,
-        fn: () =>
+        fn: async () => {
+          const ps = String((await appSub.exec(['ps', '-eo', 'args'])).stdout)
+          if (ps.includes('replace-placeholder.sh'))
+            return {
+              result: 'starting',
+              message: i18n('Rewriting web assets for the primary URL'),
+            }
+          if (ps.includes('migrate deploy')) {
+            migrationTotal ??= String(
+              (
+                await appSub.exec([
+                  'sh',
+                  '-c',
+                  'ls -d /calcom/packages/prisma/migrations/*/ | wc -l',
+                ])
+              ).stdout,
+            ).trim()
+            const applied = await postgresSub.exec([
+              'psql',
+              '-U',
+              postgresUser,
+              '-d',
+              postgresDb,
+              '-tAc',
+              'SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL',
+            ])
+            return {
+              result: 'starting',
+              message:
+                applied.exitCode === 0
+                  ? i18n('Applying database migrations (${done} of ${total})', {
+                      done: String(applied.stdout).trim(),
+                      total: migrationTotal,
+                    })
+                  : i18n('Applying database migrations'),
+            }
+          }
+          if (ps.includes('seed-app-store'))
+            return { result: 'starting', message: i18n('Registering apps') }
           // Probe /api/version rather than just port-listening so we know
           // the Next.js router and Prisma client are actually serving
           // requests, not just bound to the port.
-          sdk.healthCheck.checkWebUrl(
+          return sdk.healthCheck.checkWebUrl(
             effects,
             `http://127.0.0.1:${uiPort}/api/version`,
             {
@@ -240,7 +280,8 @@ exec crond -f -l 8
               successMessage: i18n('Cal.diy is ready'),
               errorMessage: i18n('Cal.diy is not ready'),
             },
-          ),
+          )
+        },
       },
       requires: ['postgres'],
     })
