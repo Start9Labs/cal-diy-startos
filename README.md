@@ -202,6 +202,8 @@ Six checks, and three of them are status displays rather than fault detectors: t
 
 **The five-minute grace on `cal-diy` is not padding.** The endpoint it probes only answers once the framework's router and the database client are both serving, and the container rewrites its static assets at start; a shorter grace would report failure during a normal boot.
 
+**While the container's start script is still working, `cal-diy` names the step instead of probing** — "Rewriting web assets for the primary URL", "Applying database migrations (N of M)", "Registering apps" — read from the process list and the `_prisma_migrations` table. These report `starting` for as long as that step's process is alive, so a migration stuck on this message is hung, not merely slow to fail; the grace period only applies once the web server itself is launching.
+
 **`email` and `payments` showing `disabled` is not a fault** — it is how an unconfigured optional feature is meant to look, and it names the action that would change it.
 
 ## Backups and Restore
