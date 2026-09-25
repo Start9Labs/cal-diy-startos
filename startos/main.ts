@@ -136,10 +136,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
   // after ~1h), workflow SMS/email never fires, and calendar subscriptions
   // never sync. We bundle a tiny alpine sidecar with busybox crond + curl that
   // hits each /api/cron and /api/tasks endpoint on the documented schedule.
-  // Auth: cal accepts either `Authorization: <CRON_API_KEY>` (raw, no Bearer)
-  // or `?apiKey=<key>`. Query param is simpler in a busybox crontab.
+  // /api/tasks/* accepts only `Authorization: Bearer <CRON_SECRET>`; /api/cron/* accepts it too.
   const cronCmd = (path: string) =>
-    `curl -fsS --max-time 300 -o /dev/null "http://127.0.0.1:${uiPort}${path}?apiKey=${cronApiKey}" || true`
+    `curl -fsS --max-time 300 -o /dev/null -H "Authorization: Bearer ${cronApiKey}" "http://127.0.0.1:${uiPort}${path}" || true`
   const cronScript = `set -e
 mkdir -p /etc/crontabs
 cat > /etc/crontabs/root <<'CRONTAB'
@@ -205,8 +204,8 @@ exec crond -f -l 8
           BUILT_NEXT_PUBLIC_WEBAPP_URL: builtWebappUrl,
           NEXT_PUBLIC_DISABLE_SIGNUP: signupDisabled ? 'true' : '',
           ALLOWED_HOSTNAMES: allowedHostnames,
-          // Cron sidecar uses this to authenticate against /api/cron/* and
-          // /api/tasks/*. Same key is baked into the crontab at start.
+          // Unset, upstream's tasker auth accepts `Bearer undefined`.
+          CRON_SECRET: cronApiKey,
           CRON_API_KEY: cronApiKey,
           // Enable the tasker so /api/tasks/cron actually has work to drain
           // (booking reminder emails, workflow webhooks, etc.).
