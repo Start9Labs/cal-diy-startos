@@ -97,6 +97,7 @@ Later inits merge the file without disturbing any of it, so the secrets are stab
 | `CALCOM_TELEMETRY_DISABLED`, `NEXT_TELEMETRY_DISABLED`                  | telemetry on                  | disabled          | Nothing phones home                             |
 | `CSP_POLICY`                                                            | unset, disabling CSP entirely | `non-strict`      | Nonce-based script CSP on the login pages       |
 | `ENABLE_ASYNC_TASKER`, `TASKER_ENABLE_EMAILS`, `TASKER_ENABLE_WEBHOOKS` | off                           | on                | The cron sidecar needs queued work to drain     |
+| `CRON_SECRET`, `CRON_API_KEY`                                           | unset                         | `cronApiKey`      | Authenticate the scheduled job requests         |
 | `PAYMENT_FEE_FIXED`, `PAYMENT_FEE_PERCENTAGE`                           | a platform's own cut          | `0`               | You are your own platform                       |
 
 `NEXT_PUBLIC_WEBAPP_URL` and its siblings come from `url`. Upstream bakes a build-time URL into its static assets and rewrites them at container start, which is why changing the primary URL restarts the service rather than taking effect live.
@@ -259,6 +260,7 @@ startos_managed_env_vars:
   - BUILT_NEXT_PUBLIC_WEBAPP_URL
   - NEXT_PUBLIC_DISABLE_SIGNUP
   - ALLOWED_HOSTNAMES
+  - CRON_SECRET
   - CRON_API_KEY
   - ENABLE_ASYNC_TASKER
   - TASKER_ENABLE_EMAILS
