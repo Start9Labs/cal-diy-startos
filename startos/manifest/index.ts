@@ -49,5 +49,4 @@ export const manifest = setupManifest({
     // every 2 GB machine. 1.5 GiB sits between the 1 and 2 GB tiers.
     ram: 1.5 * 1024 ** 3,
   },
-  dependencies: {},
 })

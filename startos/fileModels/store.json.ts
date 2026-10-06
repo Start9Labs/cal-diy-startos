@@ -1,7 +1,7 @@
 import { FileHelper, smtpShape, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
 
-const shape = z.object({
+const shape = z.looseObject({
   postgresPassword: z.string().optional().catch(undefined),
   nextAuthSecret: z.string().optional().catch(undefined),
   calendsoEncryptionKey: z.string().optional().catch(undefined),
@@ -15,10 +15,10 @@ const shape = z.object({
   // STRIPE_WEBHOOK_SECRET env vars cal's seed-app-store.ts reads at boot.
   stripe: z
     .discriminatedUnion('selection', [
-      z.object({ selection: z.literal('disabled') }),
-      z.object({
+      z.looseObject({ selection: z.literal('disabled') }),
+      z.looseObject({
         selection: z.literal('enabled'),
-        value: z.object({
+        value: z.looseObject({
           publishableKey: z.string(),
           secretKey: z.string(),
           connectClientId: z.string(),

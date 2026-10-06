@@ -1,4 +1,5 @@
 import { i18n } from './i18n'
+import { primaryUrl } from './primaryUrl'
 import { sdk } from './sdk'
 import { uiHostId, uiInterfaceId, uiPort } from './utils'
 
@@ -7,6 +8,7 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
   const uiMultiOrigin = await uiMulti.bindPort(uiPort, {
     protocol: 'http',
   })
+  const preferredLauncherAddress = await primaryUrl.bestUsable(effects).const()
 
   const ui = sdk.createInterface(effects, {
     name: i18n('Web UI'),
@@ -20,6 +22,7 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
     username: null,
     path: '',
     query: {},
+    preferredLauncherAddress,
   })
 
   const uiReceipt = await uiMultiOrigin.export([ui])

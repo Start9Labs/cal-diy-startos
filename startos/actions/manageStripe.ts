@@ -17,6 +17,9 @@ const { InputSpec, Value, Variants } = sdk
 export const inputSpec = InputSpec.of({
   stripe: Value.union({
     name: i18n('Stripe Payments'),
+    description: i18n(
+      "- Disabled: Cal.diy is given no Stripe keys\n- Enabled: enter your Stripe platform's keys so calendar owners can connect their own Stripe accounts and charge for bookings",
+    ),
     default: 'disabled',
     variants: Variants.of({
       disabled: { name: i18n('Disabled'), spec: InputSpec.of({}) },
@@ -42,7 +45,7 @@ export const inputSpec = InputSpec.of({
           secretKey: Value.text({
             name: i18n('Secret key'),
             description: i18n(
-              'Your Stripe secret key, from Developers → API keys. Stored securely and never displayed back.',
+              'Your Stripe secret key, from Developers → API keys.',
             ),
             required: true,
             default: null,

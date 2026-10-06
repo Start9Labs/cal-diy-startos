@@ -20,10 +20,10 @@ const dict = {
   'Web UI': 13,
   'The Cal.diy web interface for managing your calendar and bookings': 14,
 
-  // actions/setPrimaryUrl.ts
+  // primaryUrl.ts
   URL: 15,
   'Set Primary URL': 16,
-  'Choose which of your Cal.diy URLs should serve as the primary URL. Cal.diy uses this for booking-page links, share URLs, magic-link login, and outbound email content. Setting it triggers a restart so the upstream replace-placeholder.sh can rewrite the statically-baked URL inside the container.': 17,
+  'Choose which of your Cal.diy URLs should serve as the primary URL. Cal.diy uses this for booking-page links, share URLs, magic-link login, and outbound email content. Changing it restarts Cal.diy.': 17,
   "Safe to change at any time, but changing it after Cal.diy has been in use has real-world consequences: any OAuth integrations you have connected (Google, Microsoft, Zoom, etc.) will need their redirect URI re-registered with each provider and reconnected here, since the callback host they were registered with no longer matches; all active sessions will be signed out because NextAuth cookies are tied to the URL's domain; any booking links, embed snippets, or email signatures you have shared externally with the old URL stop working and need to be updated; and links inside already-sent booking confirmation emails will continue to point at the old URL (only new emails use the new URL).": 38,
   'Background Jobs': 39,
   'Cron sidecar is running. Booking reminders, OAuth credential refresh, calendar sync, and workflow emails fire on schedule.': 40,
@@ -32,12 +32,11 @@ const dict = {
   'Configure SMTP': 18,
   'Configure outbound email so Cal.diy can send booking confirmations, reminders, and magic-link sign-in messages.': 19,
 
-  // init/taskSetPrimaryUrl.ts
+  // init/primaryUrl.ts
   'Primary URL is no longer available. Select a new one.': 20,
 
   // actions/resetPassword.ts
   Email: 21,
-  'The email address of the Cal.diy user whose password to reset.': 22,
   'Reset User Password': 23,
   'Generate a new random password for the Cal.diy user with the given email and store it directly in the database. Useful if a user has lost their password and SMTP-based recovery is unavailable.': 24,
   'Use only for accounts that authenticate via password. Users who sign in exclusively via OAuth (Google, Microsoft, etc.) do not have a stored password and resetting it here will have no effect.': 25,
@@ -54,7 +53,7 @@ const dict = {
   'Signups are currently disabled. Run this action to allow new account creation on your Cal.diy instance.': 34,
   'Signups are currently enabled. Run this action to prevent new account creation. Existing users are unaffected; only new signups are blocked.': 35,
   'Most self-hosted instances should NOT enable open signups. Anyone who can reach this Cal.diy URL will be able to create an account. If you just need to add a few users you trust, leave signups disabled and add them from the Cal.diy admin console (Settings → Admin → Users → Add) instead — the new user signs in via the Forgot Password flow if SMTP is configured, or you can run the "Reset User Password" action here to mint their initial password and share it out-of-band. Only enable open signups if you specifically want strangers to self-register.': 36,
-  'After disabling, add new users from the Cal.diy admin console (Settings → Admin → Users → Add). The new user signs in via Forgot Password (SMTP required) or you can use the "Reset User Password" action here to mint their first password. A vestigial "Create Account" link will still render in the login page footer — it is baked into the static JavaScript bundle at upstream build time — but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.': 37,
+  'New accounts can no longer be created; existing users are unaffected. After disabling, add new users from the Cal.diy admin console (Settings → Admin → Users → Add). The new user signs in via Forgot Password (SMTP required) or you can use the "Reset User Password" action here to mint their first password. A vestigial "Create Account" link will still render in the login page footer — it is baked into the static JavaScript bundle at upstream build time — but clicking it redirects to a "Signup is disabled" error page. Server-side enforcement is in effect.': 37,
 
   // actions/manageStripe.ts
   'Configure Stripe Payments': 41,
@@ -63,7 +62,7 @@ const dict = {
   'Publishable key': 44,
   'Your Stripe publishable key, from Developers → API keys.': 45,
   'Secret key': 46,
-  'Your Stripe secret key, from Developers → API keys. Stored securely and never displayed back.': 47,
+  'Your Stripe secret key, from Developers → API keys.': 47,
   'Connect client ID': 48,
   'Your Stripe Connect OAuth client ID, from Connect → Settings → Integration.': 49,
   'Webhook signing secret': 50,
@@ -82,6 +81,9 @@ const dict = {
   'Applying database migrations (${done} of ${total})': 59,
   'Applying database migrations': 60,
   'Registering apps': 61,
+
+  // actions/manageStripe.ts (union description)
+  "- Disabled: Cal.diy is given no Stripe keys\n- Enabled: enter your Stripe platform's keys so calendar owners can connect their own Stripe accounts and charge for bookings": 62,
 } as const
 
 /**
