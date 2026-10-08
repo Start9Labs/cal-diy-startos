@@ -18,16 +18,23 @@ Freshly scaffolded? Work the
 guide page, not a file in this repo — read it, don't copy it in.
 
 Keep `README.md` (technical reference for an AI support or administering agent) and
-`instructions.md` (end-user docs) in sync with your changes.
+`instructions.md` (end-user docs) in sync with your changes. This file restates neither:
+whoever changes the package has both, so it carries only what they don't — repo mechanics,
+a change that looks right and is not, where the next thing gets added, a naming trap, a
+build or test invocation particular to this repo.
 
-**Bugs and feature requests are GitHub issues on this repo** — file them as you find them.
+**Fix a defect you spot rather than reporting it** — you have the package open and the
+context to be sure. File **a GitHub issue on this repo** only when the call isn't yours to
+make: you can't pin the cause down, two defensible fixes exist, or it's too large to ride on
+the work in hand. An open issue is a report, not a queue — implement one when you're asked
+to or when it's labelled `Approved`, then close it with `Closes #<n>`.
+
 Don't record work in the repo instead: no `TODO.md`, no `NOTES.md`, no `PLAN.md`. What you
 verified, tried, and decided belongs in the commit message and the PR body.
 
 ## This repo
 
-- **The cron sidecar is load-bearing, and its schedule mirrors upstream's `vercel.json`.** Without it, booking reminders never send, calendar OAuth tokens expire within the hour and are never refreshed, workflows never fire, and calendar subscriptions never sync. If you touch the crontab, re-derive it from upstream's file rather than editing entries in place.
-- **`toggle-signup` writes only the env flag, never the database.** Cal's gate is `NEXT_PUBLIC_DISABLE_SIGNUP === 'true' || dbFeatureFlag`, so the env half is sufficient, and touching the DB row would force the action to `only-running` for nothing.
-- **Signups being closed does not block the first admin.** Upstream's setup route gates on `userCount === 0`, not on the signup flag. Don't add a bootstrap step to work around a problem that does not exist.
-- **The Stripe credentials are all-or-nothing by construction.** Upstream seeds its Stripe app at boot only when all four are present, which is why the action models them as a union variant rather than four optional fields. Keep that shape.
-- **`store.json` is on the `startos` volume and the app subcontainer mounts nothing.** Everything reaches Cal.diy as environment. If you need to give it a file, that is a change of shape, not a small addition.
+- **Re-derive the cron sidecar's crontab from upstream's `apps/web/vercel.json`** rather than editing entries in place; the schedule is meant to mirror it.
+- **Keep `toggle-signup` off the database.** The env half of Cal's signup gate suffices, and a DB write would force the action to `only-running`.
+- **Don't add a first-admin bootstrap step** to work around closed signups; upstream's setup route already ignores the signup flag.
+- **Keep the Stripe credentials a union variant**, not four optional fields: upstream seeds its Stripe app only when all four are present.

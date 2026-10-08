@@ -100,7 +100,7 @@ Later inits merge the file without disturbing any of it, so the secrets are stab
 | `CRON_SECRET`, `CRON_API_KEY`                                           | unset                         | `cronApiKey`      | Authenticate the scheduled job requests         |
 | `PAYMENT_FEE_FIXED`, `PAYMENT_FEE_PERCENTAGE`                           | a platform's own cut          | `0`               | You are your own platform                       |
 
-`NEXT_PUBLIC_WEBAPP_URL` and its siblings come from `url`. Upstream bakes a build-time URL into its static assets and rewrites them at container start, which is why changing the primary URL restarts the service rather than taking effect live.
+`NEXT_PUBLIC_WEBAPP_URL` and its siblings come from `url`, followed to its hostname's current port and scheme. Upstream bakes a build-time URL into its static assets and rewrites them at container start, which is why changing the primary URL restarts the service rather than taking effect live.
 
 ## Dependencies
 
@@ -116,7 +116,7 @@ One interface. The database and the cron sidecar are internal and never publishe
 | --------- | ---- | ---- | ---- | ------------------------- |
 | Web UI    | `ui` | ui   | 3000 | The Cal.diy web interface |
 
-The port is bound on the `ui-multi` MultiHost and is not masked.
+The port is bound on the `ui-multi` MultiHost and is not masked. **Open UI opens the primary URL**, falling back to StartOS's usual choice when it is not one of the interface's addresses.
 
 ## Installation and First-Run Flow
 
@@ -124,7 +124,7 @@ Install generates all four secrets, disables signups, and picks a primary URL �
 
 1. **Secrets are generated** into `store.json`.
 2. **Signups are closed.** This does not block the first admin: upstream's setup route is gated on there being no users at all, not on the signup flag, so the initial account can still be created on first visit. Every account after that is added from Cal.diy's own admin console.
-3. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring the `.local` one. If the stored URL later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again. See [Tasks](#tasks).
+3. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring a public domain (HTTPS first), then the `.local` address, then the first available address. If the stored URL's hostname later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again; a new port or scheme on the same hostname is followed without one. See [Tasks](#tasks).
 
 The application's own first-run flow follows: open the Web UI and create the admin account.
 
@@ -134,7 +134,7 @@ Five actions, all user-facing.
 
 ### Set Primary URL
 
-Chooses which of the addresses StartOS publishes is the one Cal.diy builds links from — booking pages, share links, magic-link logins, and outbound email.
+Chooses which of the addresses StartOS publishes is the one Cal.diy builds links from — booking pages, share links, magic-link logins, and outbound email — and the one Open UI opens. Built by `sdk.setupPrimaryUrl`.
 
 - **What it changes:** `url` in `store.json`, and through it most of the application's URL environment.
 - **Cost:** seconds, then a restart. The restart is required rather than incidental: upstream rewrites its statically-built assets from the new value at container start.
@@ -182,9 +182,9 @@ Generates a new random password for one user, by email address.
 
 One task, and it is raised by a condition rather than at install.
 
-| Task            | Severity   | Raised when                                                                         | Cleared when    |
-| --------------- | ---------- | ----------------------------------------------------------------------------------- | --------------- |
-| Set Primary URL | `critical` | The stored primary URL is no longer among the addresses published for the interface | The action runs |
+| Task            | Severity   | Raised when                                                                                    | Cleared when                                           |
+| --------------- | ---------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Set Primary URL | `critical` | The stored primary URL's hostname is no longer among the addresses published for the interface | A published address is chosen, or the hostname returns |
 
 It cannot be raised on a fresh install, because init picks an available URL when none is stored. It appears when an address the instance was built around goes away — a domain removed, or a network configuration changed. `critical` because every link Cal.diy generates would otherwise point somewhere unreachable.
 

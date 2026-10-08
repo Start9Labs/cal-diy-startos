@@ -1,6 +1,7 @@
 import { T } from '@start9labs/start-sdk'
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
+import { primaryUrl } from './primaryUrl'
 import { sdk } from './sdk'
 import {
   builtWebappUrl,
@@ -20,7 +21,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const nextAuthSecret = store.nextAuthSecret ?? ''
   const calendsoEncryptionKey = store.calendsoEncryptionKey ?? ''
   const cronApiKey = store.cronApiKey ?? ''
-  const webappUrl = store.url ?? builtWebappUrl
+  const webappUrl =
+    (await primaryUrl.bestUsable(effects).const()) ?? builtWebappUrl
   const signupDisabled = store.signupDisabled ?? false
 
   // ALLOWED_HOSTNAMES is interpolated by cal into `[${env}]` and JSON.parsed

@@ -9,9 +9,7 @@ const { InputSpec, Value } = sdk
 export const inputSpec = InputSpec.of({
   email: Value.text({
     name: i18n('Email'),
-    description: i18n(
-      'The email address of the Cal.diy user whose password to reset.',
-    ),
+    description: null,
     required: true,
     default: null,
     placeholder: 'you@example.com',
