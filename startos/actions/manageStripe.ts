@@ -1,5 +1,6 @@
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
+import { primaryUrl } from '../primaryUrl'
 import { sdk } from '../sdk'
 import { builtWebappUrl } from '../utils'
 
@@ -101,7 +102,7 @@ export const manageStripe = sdk.Action.withInput(
   'manage-stripe',
 
   async ({ effects }) => {
-    const url = (await storeJson.read((s) => s.url).once()) || builtWebappUrl
+    const url = (await primaryUrl.bestUsable(effects).const()) ?? builtWebappUrl
     const callbackUrl = `${url}/api/integrations/stripepayment/callback`
     const webhookUrl = `${url}/api/integrations/stripepayment/webhook`
 

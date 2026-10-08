@@ -124,7 +124,7 @@ Install generates all four secrets, disables signups, and picks a primary URL �
 
 1. **Secrets are generated** into `store.json`.
 2. **Signups are closed.** This does not block the first admin: upstream's setup route is gated on there being no users at all, not on the signup flag, so the initial account can still be created on first visit. Every account after that is added from Cal.diy's own admin console.
-3. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring the `.local` one. If the stored URL's hostname later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again; a new port or scheme on the same hostname is followed without one. See [Tasks](#tasks).
+3. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring a public domain (HTTPS first), then the `.local` address, then the first available address. If the stored URL's hostname later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again; a new port or scheme on the same hostname is followed without one. See [Tasks](#tasks).
 
 The application's own first-run flow follows: open the Web UI and create the admin account.
 
