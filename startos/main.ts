@@ -183,7 +183,7 @@ exec crond -f -l 8
           return exitCode === 0
             ? { result: 'success', message: i18n('PostgreSQL is ready') }
             : {
-                result: 'loading',
+                result: 'starting',
                 message: i18n('Waiting for PostgreSQL to be ready'),
               }
         },
