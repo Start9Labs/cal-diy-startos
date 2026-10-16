@@ -93,24 +93,40 @@ export const resetPassword = sdk.Action.withInput(
       sdk.Mounts.of(),
       'cal-reset-password',
       async (sub) => {
-        const psqlBase = `PGPASSWORD='${postgresPassword}' psql -h 127.0.0.1 -U ${postgresUser} -d ${postgresDb} -At -v ON_ERROR_STOP=1`
+        const psqlCommand = [
+          'psql',
+          '-h',
+          '127.0.0.1',
+          '-U',
+          postgresUser,
+          '-d',
+          postgresDb,
+          '-At',
+          '-v',
+          'ON_ERROR_STOP=1',
+        ]
+        const psqlOptions = { env: { PGPASSWORD: postgresPassword } }
 
-        const lookup = await sub.execFail([
-          'sh',
-          '-c',
-          `${psqlBase} -c "SELECT id FROM \\"users\\" WHERE email = '${safeEmail}' LIMIT 1;"`,
-        ])
+        const lookup = await sub.execFail(
+          [
+            ...psqlCommand,
+            '-c',
+            `SELECT id FROM "users" WHERE email = '${safeEmail}' LIMIT 1;`,
+          ],
+          psqlOptions,
+        )
         userId = (lookup.stdout as string).trim()
         if (!userId) return
 
-        await sub.execFail([
-          'sh',
-          '-c',
-          `${psqlBase} <<'SQL_EOF'
-INSERT INTO "UserPassword" (hash, "userId") VALUES ('${safeHash}', ${userId})
-ON CONFLICT ("userId") DO UPDATE SET hash = EXCLUDED.hash;
-SQL_EOF`,
-        ])
+        await sub.execFail(
+          [
+            ...psqlCommand,
+            '-c',
+            `INSERT INTO "UserPassword" (hash, "userId") VALUES ('${safeHash}', ${userId})
+ON CONFLICT ("userId") DO UPDATE SET hash = EXCLUDED.hash;`,
+          ],
+          psqlOptions,
+        )
       },
     )
 
@@ -136,6 +152,7 @@ SQL_EOF`,
         masked: true,
         copyable: true,
         qr: false,
+        launchable: false,
       },
     }
   },
