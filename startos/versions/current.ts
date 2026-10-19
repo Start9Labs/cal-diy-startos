@@ -1,14 +1,13 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '6.2.0:9',
+  version: '6.2.0:10',
   releaseNotes: {
-    en_US: 'Faster startup and safer password resets.',
-    es_ES: 'Inicio más rápido y restablecimiento de contraseñas más seguro.',
-    de_DE: 'Schnellerer Start und sichereres Zurücksetzen von Passwörtern.',
-    pl_PL: 'Szybsze uruchamianie i bezpieczniejsze resetowanie haseł.',
-    fr_FR:
-      'Démarrage plus rapide et réinitialisation des mots de passe plus sûre.',
+    en_US: `Adds Forward Email to the SMTP provider presets.`,
+    es_ES: `Añade Forward Email a los proveedores SMTP predefinidos.`,
+    de_DE: `Fügt Forward Email zu den vordefinierten SMTP-Anbietern hinzu.`,
+    pl_PL: `Dodaje Forward Email do predefiniowanych dostawców SMTP.`,
+    fr_FR: `Ajoute Forward Email aux fournisseurs SMTP prédéfinis.`,
   },
   migrations: {
     up: async ({ effects }) => {},
