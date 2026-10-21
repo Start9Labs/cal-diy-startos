@@ -14,3 +14,10 @@ FROM ${CAL_IMAGE}:${CAL_VERSION}-arm AS base-arm64
 
 ARG TARGETARCH
 FROM base-${TARGETARCH} AS final
+
+# The base image's CA store is only as current as its last release.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+# Node otherwise trusts its compiled-in roots instead of the system store.
+ENV NODE_OPTIONS=--use-openssl-ca

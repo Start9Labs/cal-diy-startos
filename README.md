@@ -35,7 +35,7 @@
 
 ## Image and Container Runtime
 
-Three images. The application's is built here only to pick the right upstream tag, and the cron sidecar is a few lines of Alpine.
+Three images. The application's build selects the right upstream tag and updates its TLS trust store; the cron sidecar is a few lines of Alpine.
 
 | Property      | Value                                                                                |
 | ------------- | ------------------------------------------------------------------------------------ |
@@ -44,7 +44,7 @@ Three images. The application's is built here only to pick the right upstream ta
 | Entrypoint    | Each image's own; the cron sidecar runs busybox `crond`                              |
 | Memory        | The manifest declares a 1.5 GiB floor                                                |
 
-The application Dockerfile exists because upstream publishes each architecture under a **separate tag** rather than as one multi-architecture manifest, so the image cannot be pulled by tag alone; the Dockerfile selects the right base for the target architecture and adds nothing.
+Upstream publishes each architecture under a **separate tag** rather than as one multi-architecture manifest, so the application Dockerfile selects the right base for the target architecture. It also upgrades Debian's `ca-certificates` and sets `NODE_OPTIONS=--use-openssl-ca`, making Node use the updated system trust store rather than its compiled-in roots.
 
 | Subcontainer        | Purpose                                                            |
 | ------------------- | ------------------------------------------------------------------ |
