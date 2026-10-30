@@ -48,5 +48,7 @@ export const pgIsReady = [
   '127.0.0.1',
 ]
 
-export const databaseUrl = (password: string) =>
-  `postgresql://${postgresUser}:${password}@127.0.0.1:${postgresPort}/${postgresDb}`
+export function databaseEnv(password: string) {
+  const url = `postgresql://${postgresUser}:${password}@127.0.0.1:${postgresPort}/${postgresDb}`
+  return { DATABASE_URL: url, DATABASE_DIRECT_URL: url }
+}

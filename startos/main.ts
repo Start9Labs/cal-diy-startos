@@ -5,7 +5,7 @@ import { primaryUrl } from './primaryUrl'
 import { sdk } from './sdk'
 import {
   builtWebappUrl,
-  databaseUrl,
+  databaseEnv,
   pgIsReady,
   postgresEnv,
   postgresPort,
@@ -171,8 +171,7 @@ exec crond -f -l 8
       exec: {
         command: sdk.useEntrypoint(),
         env: {
-          DATABASE_URL: databaseUrl(postgresPassword),
-          DATABASE_DIRECT_URL: databaseUrl(postgresPassword),
+          ...databaseEnv(postgresPassword),
           DATABASE_HOST: `127.0.0.1:${postgresPort}`,
           NEXTAUTH_SECRET: nextAuthSecret,
           NEXTAUTH_URL: webappUrl,

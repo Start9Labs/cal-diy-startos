@@ -1,7 +1,7 @@
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { databaseUrl, pgIsReady, postgresEnv, postgresSub } from '../utils'
+import { databaseEnv, pgIsReady, postgresEnv, postgresSub } from '../utils'
 
 // start.sh's own `prisma migrate deploy` then finds nothing to apply, so a
 // restart of `main` can never land mid-migration.
@@ -55,7 +55,7 @@ export const migrateDatabase = sdk.setupOnInit(
               ],
               {
                 cwd: '/calcom',
-                env: { DATABASE_URL: databaseUrl(postgresPassword) },
+                env: databaseEnv(postgresPassword),
                 timeout: null,
               },
             )
