@@ -5,6 +5,7 @@ import { versionGraph } from '../versions'
 import { actions } from '../actions'
 import { restoreInit } from '../backups'
 import { initializeService } from './initializeService'
+import { migrateDatabase } from './migrateDatabase'
 import { seedPrimaryUrl, taskPrimaryUrl } from './primaryUrl'
 
 export const init = sdk.setupInit(
@@ -14,6 +15,7 @@ export const init = sdk.setupInit(
   actions,
   dependencies,
   initializeService,
+  migrateDatabase,
   seedPrimaryUrl,
   taskPrimaryUrl,
 )
