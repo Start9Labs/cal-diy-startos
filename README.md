@@ -60,7 +60,7 @@ Upstream publishes each architecture under a **separate tag** rather than as one
 
 Startup is ordered `postgres` → `cal-diy` → `apps` → `cron`. Postgres listens on loopback only, inside the service's own network namespace.
 
-**The `apps` oneshot turns off every app not in `enabledApps`, on every start.** The container's start script re-runs upstream's app seed at each boot, and the seed turns back on every app that needs no keys; the oneshot runs once `cal-diy` is ready, after the seed. Stripe is excluded: the Configure Stripe Payments action controls it. With `enabledApps` unset — an install from before the Choose Enabled Apps action that has never run it — the oneshot changes nothing.
+**The `apps` oneshot turns off every app not in `enabledApps`, on every start.** The container's start script re-runs upstream's app seed at each boot, and the seed turns back on every app that needs no keys; the oneshot runs once `cal-diy` is ready, after the seed. Stripe is on exactly when Configure Stripe Payments has configured it, since upstream's seed enables it even without keys. With `enabledApps` unset — an install from before the Choose Enabled Apps action that has never run it — the oneshot changes nothing.
 
 **The cron sidecar has no upstream equivalent in a self-hosted deployment.** Upstream runs these jobs on its hosting platform's scheduler, so a plain container deployment silently never runs them — booking reminders are never sent, calendar OAuth tokens are never refreshed and expire within about an hour, workflows never fire, and calendar subscriptions never sync. The sidecar reproduces upstream's published schedule with `crond` and `curl` against the application's own job endpoints, authenticating with a key generated at install.
 
@@ -164,7 +164,7 @@ Sets up outbound email, which booking confirmations, reminders, and magic-link s
 
 Supplies the four Stripe credentials that let calendar owners collect payment for bookings.
 
-- **What it changes:** `stripe` in `store.json`.
+- **What it changes:** `stripe` in `store.json`, and with it whether the Stripe app is enabled — on an install that has a Choose Enabled Apps selection, Stripe is turned off whenever this is Disabled.
 - **Cost:** seconds, then a restart. The application seeds its Stripe integration at boot, and only when all four credentials are present — which the form enforces as a group rather than field by field.
 - **Repeat safety:** idempotent, and reversible by selecting Disabled.
 - **Input validation:** each field is checked against the prefix Stripe uses for that key type, so a mis-pasted key is caught in the form rather than failing silently at boot.

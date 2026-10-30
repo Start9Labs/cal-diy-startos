@@ -247,7 +247,14 @@ exec crond -f -l 8
           // start.sh re-runs upstream's seed on every boot, which re-enables every app needing no keys
           if (store.enabledApps) {
             await appsSub.execFail(
-              [...psql, '-c', enableAppsSql(store.enabledApps)],
+              [
+                ...psql,
+                '-c',
+                enableAppsSql([
+                  ...store.enabledApps,
+                  ...(stripeReady ? ['stripe'] : []),
+                ]),
+              ],
               { env: { PGPASSWORD: postgresPassword } },
             )
           }
