@@ -1,18 +1,18 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '6.2.0:12',
+  version: '6.2.0:13',
   releaseNotes: {
     en_US:
-      'Install and update now prepare the database before Cal.diy starts, so settings can be changed safely while it starts.',
+      'New installs start with every Cal.diy app turned off. A new Choose Enabled Apps action picks which apps are available, and the choice holds across restarts.',
     es_ES:
-      'La instalación y la actualización ahora preparan la base de datos antes de que Cal.diy se inicie, por lo que la configuración puede cambiarse con seguridad mientras arranca.',
+      'Las instalaciones nuevas empiezan con todas las aplicaciones de Cal.diy desactivadas. Una nueva acción, Elegir aplicaciones habilitadas, decide qué aplicaciones están disponibles, y la elección se mantiene tras los reinicios.',
     de_DE:
-      'Installation und Update bereiten die Datenbank jetzt vor, bevor Cal.diy startet, sodass Einstellungen während des Starts gefahrlos geändert werden können.',
+      'Neue Installationen starten mit allen Cal.diy-Apps deaktiviert. Eine neue Aktion „Aktivierte Apps auswählen“ legt fest, welche Apps verfügbar sind, und die Auswahl bleibt über Neustarts hinweg erhalten.',
     pl_PL:
-      'Instalacja i aktualizacja przygotowują teraz bazę danych przed uruchomieniem Cal.diy, więc ustawienia można bezpiecznie zmieniać podczas jego uruchamiania.',
+      'Nowe instalacje zaczynają z wyłączonymi wszystkimi aplikacjami Cal.diy. Nowa akcja „Wybierz włączone aplikacje” określa, które aplikacje są dostępne, a wybór zostaje zachowany po ponownym uruchomieniu.',
     fr_FR:
-      'L’installation et la mise à jour préparent désormais la base de données avant le démarrage de Cal.diy, ce qui permet de modifier les paramètres sans risque pendant son démarrage.',
+      'Les nouvelles installations démarrent avec toutes les applications de Cal.diy désactivées. Une nouvelle action, Choisir les applications activées, détermine les applications disponibles, et ce choix est conservé après un redémarrage.',
   },
   migrations: {
     up: async ({ effects }) => {},

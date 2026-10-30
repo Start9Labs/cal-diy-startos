@@ -1,6 +1,8 @@
 import { utils } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
+import { chooseApps } from '../actions/chooseApps'
 import { storeJson } from '../fileModels/store.json'
+import { i18n } from '../i18n'
 
 export const initializeService = sdk.setupOnInit(async (effects, kind) => {
   if (kind === 'install') {
@@ -35,6 +37,12 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
       smtp: { selection: 'disabled', value: {} },
       stripe: { selection: 'disabled' },
       signupDisabled: true,
+      enabledApps: [],
+    })
+    await sdk.action.createOwnTask(effects, chooseApps, 'optional', {
+      reason: i18n(
+        'Every Cal.diy app is turned off. Choose the ones you want, such as CalDAV to check your calendar for conflicts or Jitsi for video meetings.',
+      ),
     })
   } else {
     await storeJson.merge(effects, {})

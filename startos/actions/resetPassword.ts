@@ -2,7 +2,7 @@ import { utils } from '@start9labs/start-sdk'
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { postgresDb, postgresUser } from '../utils'
+import { psql } from '../utils'
 
 const { InputSpec, Value } = sdk
 
@@ -93,23 +93,11 @@ export const resetPassword = sdk.Action.withInput(
       sdk.Mounts.of(),
       'cal-reset-password',
       async (sub) => {
-        const psqlCommand = [
-          'psql',
-          '-h',
-          '127.0.0.1',
-          '-U',
-          postgresUser,
-          '-d',
-          postgresDb,
-          '-At',
-          '-v',
-          'ON_ERROR_STOP=1',
-        ]
         const psqlOptions = { env: { PGPASSWORD: postgresPassword } }
 
         const lookup = await sub.execFail(
           [
-            ...psqlCommand,
+            ...psql,
             '-c',
             `SELECT id FROM "users" WHERE email = '${safeEmail}' LIMIT 1;`,
           ],
@@ -120,7 +108,7 @@ export const resetPassword = sdk.Action.withInput(
 
         await sub.execFail(
           [
-            ...psqlCommand,
+            ...psql,
             '-c',
             `INSERT INTO "UserPassword" (hash, "userId") VALUES ('${safeHash}', ${userId})
 ON CONFLICT ("userId") DO UPDATE SET hash = EXCLUDED.hash;`,

@@ -52,3 +52,22 @@ export function databaseEnv(password: string) {
   const url = `postgresql://${postgresUser}:${password}@127.0.0.1:${postgresPort}/${postgresDb}`
   return { DATABASE_URL: url, DATABASE_DIRECT_URL: url }
 }
+
+export const psql = [
+  'psql',
+  '-h',
+  '127.0.0.1',
+  '-U',
+  postgresUser,
+  '-d',
+  postgresDb,
+  '-At',
+  '-v',
+  'ON_ERROR_STOP=1',
+]
+
+// Stripe is left out: the manage-stripe action owns it, through upstream's seed
+export const listAppsSql = `SELECT slug, categories[1], enabled FROM "App" WHERE slug <> 'stripe' ORDER BY slug;`
+
+export const enableAppsSql = (slugs: string[]) =>
+  `UPDATE "App" SET enabled = slug = ANY(ARRAY[${slugs.map((s) => `'${s.replace(/'/g, "''")}'`).join(',')}]::text[]) WHERE slug <> 'stripe';`

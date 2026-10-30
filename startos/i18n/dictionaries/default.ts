@@ -85,6 +85,19 @@ const dict = {
 
   // actions/manageStripe.ts (union description)
   "- Disabled: Cal.diy is given no Stripe keys\n- Enabled: enter your Stripe platform's keys so calendar owners can connect their own Stripe accounts and charge for bookings": 62,
+  // actions/chooseApps.ts, init/initializeService.ts
+  'Choose Enabled Apps': 63,
+  'Choose which apps Cal.diy offers in its app store, by category. Every other app is turned off. An app that needs provider credentials, such as Google Calendar or Zoom, still needs them before it can be connected. Stripe is managed by the "Configure Stripe Payments" action. Changing the selection restarts Cal.diy.': 64,
+  Apps: 65,
+  'No apps available': 68,
+  'Every Cal.diy app is turned off. Choose the ones you want, such as CalDAV to check your calendar for conflicts or Jitsi for video meetings.': 69,
+  Calendars: 70,
+  Conferencing: 71,
+  CRM: 72,
+  Messaging: 73,
+  Automation: 74,
+  Analytics: 75,
+  Other: 76,
 } as const
 
 /**

@@ -53,10 +53,14 @@ Upstream publishes each architecture under a **separate tag** rather than as one
 | `cal-cron-sub`       | The scheduled-job runner                                           |
 | `cal-hash-password`  | Temporary; used by the Reset User Password action                  |
 | `cal-reset-password` | Temporary; used by the Reset User Password action                  |
+| `cal-apps-sub`       | The `apps` oneshot; applies the enabled-apps choice                |
+| `cal-list-apps`      | Temporary; lists apps for the Choose Enabled Apps action           |
 | `init-postgres`      | Temporary; the database during init's migrations                   |
 | `init-cal-diy`       | Temporary; runs `prisma migrate deploy` during init                |
 
-Startup is ordered `postgres` → `cal-diy` → `cron`. Postgres listens on loopback only, inside the service's own network namespace.
+Startup is ordered `postgres` → `cal-diy` → `apps` → `cron`. Postgres listens on loopback only, inside the service's own network namespace.
+
+**The `apps` oneshot turns off every app not in `enabledApps`, on every start.** The container's start script re-runs upstream's app seed at each boot, and the seed turns back on every app that needs no keys; the oneshot runs once `cal-diy` is ready, after the seed. Stripe is excluded: the Configure Stripe Payments action controls it. With `enabledApps` unset — an install from before the Choose Enabled Apps action that has never run it — the oneshot changes nothing.
 
 **The cron sidecar has no upstream equivalent in a self-hosted deployment.** Upstream runs these jobs on its hosting platform's scheduler, so a plain container deployment silently never runs them — booking reminders are never sent, calendar OAuth tokens are never refreshed and expire within about an hour, workflows never fire, and calendar subscriptions never sync. The sidecar reproduces upstream's published schedule with `crond` and `curl` against the application's own job endpoints, authenticating with a key generated at install.
 
@@ -89,6 +93,7 @@ One model. It holds every secret the package generates and every choice the acti
 | `smtp`                  | The Configure SMTP action             | Either StartOS's system SMTP or credentials you supply     |
 | `stripe`                | The Configure Stripe action           | All four credentials, or disabled                          |
 | `signupDisabled`        | Install, then the signup action       | Defaults to **true**                                       |
+| `enabledApps`           | Install, then Choose Enabled Apps     | Defaults to none; unset on earlier installs                |
 
 Later inits merge the file without disturbing any of it, so the secrets are stable for the life of the install. Nothing rewrites a value you set through an action.
 
@@ -123,18 +128,19 @@ The port is bound on the `ui-multi` MultiHost and is not masked. **Open UI opens
 
 ## Installation and First-Run Flow
 
-Install generates all four secrets, disables signups, migrates the database, and picks a primary URL — nothing is asked of you and no credential is shown, because the first account is created inside the application.
+Install generates all four secrets, turns off every app, disables signups, migrates the database, and picks a primary URL — nothing is asked of you and no credential is shown, because the first account is created inside the application.
 
 1. **Secrets are generated** into `store.json`.
-2. **Signups are closed.** This does not block the first admin: upstream's setup route is gated on there being no users at all, not on the signup flag, so the initial account can still be created on first visit. Every account after that is added from Cal.diy's own admin console.
-3. **The database is migrated** to the image's schema with `prisma migrate deploy`, against a temporary Postgres. Update and restore do the same. A failure here fails the install or update, and StartOS rolls it back. The container's start script runs the same command at every start, where it has nothing left to apply.
-4. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring a public domain (HTTPS first), then the `.local` address, then the first available address. If the stored URL's hostname later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again; a new port or scheme on the same hostname is followed without one. See [Tasks](#tasks).
+2. **Every app is turned off**, and an `optional` task offers Choose Enabled Apps. See [Tasks](#tasks).
+3. **Signups are closed.** This does not block the first admin: upstream's setup route is gated on there being no users at all, not on the signup flag, so the initial account can still be created on first visit. Every account after that is added from Cal.diy's own admin console.
+4. **The database is migrated** to the image's schema with `prisma migrate deploy`, against a temporary Postgres. Update and restore do the same. A failure here fails the install or update, and StartOS rolls it back. The container's start script runs the same command at every start, where it has nothing left to apply.
+5. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring a public domain (HTTPS first), then the `.local` address, then the first available address. If the stored URL's hostname later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again; a new port or scheme on the same hostname is followed without one. See [Tasks](#tasks).
 
 The application's own first-run flow follows: open the Web UI and create the admin account.
 
 ## Actions
 
-Five actions, all user-facing.
+Six actions, all user-facing.
 
 ### Set Primary URL
 
@@ -163,6 +169,16 @@ Supplies the four Stripe credentials that let calendar owners collect payment fo
 - **Repeat safety:** idempotent, and reversible by selecting Disabled.
 - **Input validation:** each field is checked against the prefix Stripe uses for that key type, so a mis-pasted key is caught in the form rather than failing silently at boot.
 
+### Choose Enabled Apps
+
+Chooses which apps Cal.diy offers in its app store; every other app is turned off.
+
+- **What it changes:** `enabledApps` in `store.json`; the `apps` oneshot applies it at the next start.
+- **Availability:** only while the service is running, since the list comes from the live database.
+- **Cost:** seconds, then a restart.
+- **Repeat safety:** idempotent; the form is pre-filled with the current choice, or with the apps currently enabled on an install that has never run it.
+- **Input:** one section per category — calendars, conferencing, CRM, messaging, automation, analytics, payments, other — each a checklist of the apps upstream registers there, except Stripe. An app is filed under its first category, with upstream's deprecated `video` counted as conferencing. Selecting an app that needs provider credentials makes it visible, not usable; it still needs those credentials.
+
 ### Enable / Disable Signups
 
 Toggles open registration. The action's name and description flip to describe what running it will do.
@@ -184,13 +200,14 @@ Generates a new random password for one user, by email address.
 
 ## Tasks
 
-One task, and it is raised by a condition rather than at install.
+Two tasks.
 
-| Task            | Severity   | Raised when                                                                                    | Cleared when                                           |
-| --------------- | ---------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Set Primary URL | `critical` | The stored primary URL's hostname is no longer among the addresses published for the interface | A published address is chosen, or the hostname returns |
+| Task                | Severity   | Raised when                                                                                    | Cleared when                                           |
+| ------------------- | ---------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Choose Enabled Apps | `optional` | Install                                                                                        | The action is run                                      |
+| Set Primary URL     | `critical` | The stored primary URL's hostname is no longer among the addresses published for the interface | A published address is chosen, or the hostname returns |
 
-It cannot be raised on a fresh install, because init picks an available URL when none is stored. It appears when an address the instance was built around goes away — a domain removed, or a network configuration changed. `critical` because every link Cal.diy generates would otherwise point somewhere unreachable.
+Set Primary URL cannot be raised on a fresh install, because init picks an available URL when none is stored. It appears when an address the instance was built around goes away — a domain removed, or a network configuration changed. `critical` because every link Cal.diy generates would otherwise point somewhere unreachable.
 
 ## Health Checks
 
@@ -248,6 +265,8 @@ subcontainers:
   - cal-cron-sub # scheduled jobs
   - cal-hash-password # temporary; the Reset User Password action
   - cal-reset-password # temporary; the Reset User Password action
+  - cal-apps-sub # the apps oneshot
+  - cal-list-apps # temporary; the Choose Enabled Apps action
   - init-postgres # temporary; database during init migrations
   - init-cal-diy # temporary; prisma migrate deploy during init
 volumes:
@@ -298,9 +317,11 @@ actions:
   - set-primary-url
   - manage-smtp
   - manage-stripe
+  - choose-apps # only-running
   - toggle-signup
   - reset-password # only-running
 tasks:
+  - { action: choose-apps, severity: optional } # install
   - { action: set-primary-url, severity: critical }
 health_checks:
   - cal-diy # displayed "Web Interface"
