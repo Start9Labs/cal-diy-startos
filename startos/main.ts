@@ -5,9 +5,11 @@ import { primaryUrl } from './primaryUrl'
 import { sdk } from './sdk'
 import {
   builtWebappUrl,
-  postgresDb,
+  databaseEnv,
+  pgIsReady,
+  postgresEnv,
   postgresPort,
-  postgresUser,
+  postgresSub,
   uiPort,
 } from './utils'
 
@@ -104,17 +106,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   }
   const stripeReady = !!stripeEnv.STRIPE_PRIVATE_KEY
 
-  const postgresSub = sdk.SubContainer.of(
-    effects,
-    { imageId: 'postgres' },
-    sdk.Mounts.of().mountVolume({
-      volumeId: 'db',
-      subpath: null,
-      mountpoint: '/var/lib/postgresql',
-      readonly: false,
-    }),
-    'postgres-sub',
-  )
+  const pgSub = postgresSub(effects, 'postgres-sub')
 
   const appSub = sdk.SubContainer.of(
     effects,
@@ -129,8 +121,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
     sdk.Mounts.of(),
     'cal-cron-sub',
   )
-
-  const databaseUrl = `postgresql://${postgresUser}:${postgresPassword}@127.0.0.1:${postgresPort}/${postgresDb}`
 
   // Vercel-style cron schedule mirrored from upstream's apps/web/vercel.json.
   // Without these jobs running, booking reminders never send, OAuth tokens for
@@ -155,31 +145,17 @@ CRONTAB
 exec crond -f -l 8
 `
 
-  let migrationTotal: string | undefined
-
   return sdk.Daemons.of(effects)
     .addDaemon('postgres', {
-      subcontainer: postgresSub,
+      subcontainer: pgSub,
       exec: {
         command: sdk.useEntrypoint(['-c', 'listen_addresses=127.0.0.1']),
-        env: {
-          POSTGRES_USER: postgresUser,
-          POSTGRES_PASSWORD: postgresPassword,
-          POSTGRES_DB: postgresDb,
-        },
+        env: postgresEnv(postgresPassword),
       },
       ready: {
         display: i18n('Database'),
         fn: async () => {
-          const { exitCode } = await postgresSub.exec([
-            'pg_isready',
-            '-U',
-            postgresUser,
-            '-d',
-            postgresDb,
-            '-h',
-            '127.0.0.1',
-          ])
+          const { exitCode } = await pgSub.exec(pgIsReady)
           return exitCode === 0
             ? { result: 'success', message: i18n('PostgreSQL is ready') }
             : {
@@ -195,8 +171,7 @@ exec crond -f -l 8
       exec: {
         command: sdk.useEntrypoint(),
         env: {
-          DATABASE_URL: databaseUrl,
-          DATABASE_DIRECT_URL: databaseUrl,
+          ...databaseEnv(postgresPassword),
           DATABASE_HOST: `127.0.0.1:${postgresPort}`,
           NEXTAUTH_SECRET: nextAuthSecret,
           NEXTAUTH_URL: webappUrl,
@@ -238,36 +213,6 @@ exec crond -f -l 8
               result: 'starting',
               message: i18n('Rewriting web assets for the primary URL'),
             }
-          if (ps.includes('migrate deploy')) {
-            migrationTotal ??= String(
-              (
-                await appSub.exec([
-                  'sh',
-                  '-c',
-                  'ls -d /calcom/packages/prisma/migrations/*/ | wc -l',
-                ])
-              ).stdout,
-            ).trim()
-            const applied = await postgresSub.exec([
-              'psql',
-              '-U',
-              postgresUser,
-              '-d',
-              postgresDb,
-              '-tAc',
-              'SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL',
-            ])
-            return {
-              result: 'starting',
-              message:
-                applied.exitCode === 0
-                  ? i18n('Applying database migrations (${done} of ${total})', {
-                      done: String(applied.stdout).trim(),
-                      total: migrationTotal,
-                    })
-                  : i18n('Applying database migrations'),
-            }
-          }
           if (ps.includes('seed-app-store'))
             return { result: 'starting', message: i18n('Registering apps') }
           // Probe /api/version rather than just port-listening so we know

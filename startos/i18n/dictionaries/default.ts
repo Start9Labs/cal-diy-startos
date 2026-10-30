@@ -78,9 +78,10 @@ const dict = {
 
   // main.ts (web interface startup phases)
   'Rewriting web assets for the primary URL': 58,
-  'Applying database migrations (${done} of ${total})': 59,
-  'Applying database migrations': 60,
   'Registering apps': 61,
+
+  // init/migrateDatabase.ts
+  'Applying database migrations': 60,
 
   // actions/manageStripe.ts (union description)
   "- Disabled: Cal.diy is given no Stripe keys\n- Enabled: enter your Stripe platform's keys so calendar owners can connect their own Stripe accounts and charge for bookings": 62,

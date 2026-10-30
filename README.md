@@ -46,12 +46,15 @@ Three images. The application's build selects the right upstream tag and updates
 
 Upstream publishes each architecture under a **separate tag** rather than as one multi-architecture manifest, so the application Dockerfile selects the right base for the target architecture. It also upgrades Debian's `ca-certificates` and sets `NODE_OPTIONS=--use-openssl-ca`, making Node use the updated system trust store rather than its compiled-in roots.
 
-| Subcontainer        | Purpose                                                            |
-| ------------------- | ------------------------------------------------------------------ |
-| `cal-diy-sub`       | The `cal-diy` daemon — the application, and the one to `attach` to |
-| `postgres-sub`      | The private database                                               |
-| `cal-cron-sub`      | The scheduled-job runner                                           |
-| `cal-hash-password` | Temporary; used by the Reset User Password action                  |
+| Subcontainer         | Purpose                                                            |
+| -------------------- | ------------------------------------------------------------------ |
+| `cal-diy-sub`        | The `cal-diy` daemon — the application, and the one to `attach` to |
+| `postgres-sub`       | The private database                                               |
+| `cal-cron-sub`       | The scheduled-job runner                                           |
+| `cal-hash-password`  | Temporary; used by the Reset User Password action                  |
+| `cal-reset-password` | Temporary; used by the Reset User Password action                  |
+| `init-postgres`      | Temporary; the database during init's migrations                   |
+| `init-cal-diy`       | Temporary; runs `prisma migrate deploy` during init                |
 
 Startup is ordered `postgres` → `cal-diy` → `cron`. Postgres listens on loopback only, inside the service's own network namespace.
 
@@ -120,11 +123,12 @@ The port is bound on the `ui-multi` MultiHost and is not masked. **Open UI opens
 
 ## Installation and First-Run Flow
 
-Install generates all four secrets, disables signups, and picks a primary URL — nothing is asked of you and no credential is shown, because the first account is created inside the application.
+Install generates all four secrets, disables signups, migrates the database, and picks a primary URL — nothing is asked of you and no credential is shown, because the first account is created inside the application.
 
 1. **Secrets are generated** into `store.json`.
 2. **Signups are closed.** This does not block the first admin: upstream's setup route is gated on there being no users at all, not on the signup flag, so the initial account can still be created on first visit. Every account after that is added from Cal.diy's own admin console.
-3. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring a public domain (HTTPS first), then the `.local` address, then the first available address. If the stored URL's hostname later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again; a new port or scheme on the same hostname is followed without one. See [Tasks](#tasks).
+3. **The database is migrated** to the image's schema with `prisma migrate deploy`, against a temporary Postgres. Update and restore do the same. A failure here fails the install or update, and StartOS rolls it back. The container's start script runs the same command at every start, where it has nothing left to apply.
+4. **A primary URL is chosen** from the addresses StartOS has published for the interface, preferring a public domain (HTTPS first), then the `.local` address, then the first available address. If the stored URL's hostname later stops being one of those addresses — a domain removed, for instance — a `critical` task asks you to pick again; a new port or scheme on the same hostname is followed without one. See [Tasks](#tasks).
 
 The application's own first-run flow follows: open the Web UI and create the admin account.
 
@@ -203,7 +207,7 @@ Six checks, and three of them are status displays rather than fault detectors: t
 
 **The five-minute grace on `cal-diy` is not padding.** The endpoint it probes only answers once the framework's router and the database client are both serving, and the container rewrites its static assets at start; a shorter grace would report failure during a normal boot.
 
-**While the container's start script is still working, `cal-diy` names the step instead of probing** — "Rewriting web assets for the primary URL", "Applying database migrations (N of M)", "Registering apps" — read from the process list and the `_prisma_migrations` table. These report `starting` for as long as that step's process is alive, even after the five-minute grace window expires. That window begins when the daemon launches, not when the web server starts: if startup steps take longer than five minutes, an unavailable `/api/version` reports `failure` as soon as they finish.
+**While the container's start script is still working, `cal-diy` names the step instead of probing** — "Rewriting web assets for the primary URL", "Registering apps" — read from the process list. These report `starting` for as long as that step's process is alive, even after the five-minute grace window expires. That window begins when the daemon launches, not when the web server starts: if startup steps take longer than five minutes, an unavailable `/api/version` reports `failure` as soon as they finish.
 
 **`email` and `payments` showing `disabled` is not a fault** — it is how an unconfigured optional feature is meant to look, and it names the action that would change it.
 
@@ -243,6 +247,9 @@ subcontainers:
   - postgres-sub # private database
   - cal-cron-sub # scheduled jobs
   - cal-hash-password # temporary; the Reset User Password action
+  - cal-reset-password # temporary; the Reset User Password action
+  - init-postgres # temporary; database during init migrations
+  - init-cal-diy # temporary; prisma migrate deploy during init
 volumes:
   db: /var/lib/postgresql
   startos: host side (store.json)
