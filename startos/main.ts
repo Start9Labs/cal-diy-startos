@@ -6,7 +6,9 @@ import { sdk } from './sdk'
 import {
   builtWebappUrl,
   databaseEnv,
+  enableAppsSql,
   pgIsReady,
+  psql,
   postgresEnv,
   postgresPort,
   postgresSub,
@@ -113,6 +115,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
     { imageId: 'main' },
     sdk.Mounts.of(),
     'cal-diy-sub',
+  )
+
+  const appsSub = sdk.SubContainer.of(
+    effects,
+    { imageId: 'postgres' },
+    sdk.Mounts.of(),
+    'cal-apps-sub',
   )
 
   const cronSub = sdk.SubContainer.of(
@@ -230,6 +239,22 @@ exec crond -f -l 8
         },
       },
       requires: ['postgres'],
+    })
+    .addOneshot('apps', {
+      subcontainer: appsSub,
+      exec: {
+        fn: async () => {
+          // start.sh re-runs upstream's seed on every boot, which re-enables every app needing no keys
+          if (store.enabledApps) {
+            await appsSub.execFail(
+              [...psql, '-c', enableAppsSql(store.enabledApps)],
+              { env: { PGPASSWORD: postgresPassword } },
+            )
+          }
+          return null
+        },
+      },
+      requires: ['cal-diy'],
     })
     .addDaemon('cron', {
       subcontainer: cronSub,
