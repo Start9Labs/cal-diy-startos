@@ -66,8 +66,8 @@ export const psql = [
   'ON_ERROR_STOP=1',
 ]
 
-// Stripe is left out: the manage-stripe action owns it, through upstream's seed
+// Stripe is left out: it is on exactly when the manage-stripe action has configured it
 export const listAppsSql = `SELECT slug, categories[1], enabled FROM "App" WHERE slug <> 'stripe' ORDER BY slug;`
 
 export const enableAppsSql = (slugs: string[]) =>
-  `UPDATE "App" SET enabled = slug = ANY(ARRAY[${slugs.map((s) => `'${s.replace(/'/g, "''")}'`).join(',')}]::text[]) WHERE slug <> 'stripe';`
+  `UPDATE "App" SET enabled = slug = ANY(ARRAY[${slugs.map((s) => `'${s.replace(/'/g, "''")}'`).join(',')}]::text[]);`
