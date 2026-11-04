@@ -22,5 +22,4 @@ curl -s "https://hub.docker.com/v2/repositories/calcom/cal.com/tags/<new-version
 ## Applying the bump
 
 - Update `calVersion` in `startos/manifest/index.ts` (e.g. `v6.2.0` → `v6.3.0`).
-- Update `version` and `releaseNotes` in `startos/versions/current.ts`.
 - For major bumps, read the upstream release notes for breaking changes (especially around Prisma migrations and any newly required env vars) and update `startos/main.ts` if necessary.
