@@ -11,6 +11,7 @@ const shape = z.looseObject({
   signupDisabled: z.boolean().catch(false),
   // Unset on installs from before the choose-apps action: upstream's seed decides, as it always did
   enabledApps: z.array(z.string()).optional().catch(undefined),
+  organizerEmailExemptDomains: z.array(z.string()).catch([]),
   // Platform Stripe credentials for paid bookings (a disabled/enabled union,
   // mirroring the manage-stripe action). When enabled, main.ts maps value.* to
   // the NEXT_PUBLIC_STRIPE_PUBLIC_KEY / STRIPE_PRIVATE_KEY / STRIPE_CLIENT_ID /

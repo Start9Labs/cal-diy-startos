@@ -1,18 +1,18 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '6.2.0:13',
+  version: '6.2.0:14',
   releaseNotes: {
     en_US:
-      'New installs start with every Cal.diy app turned off. A new Choose Enabled Apps action picks which apps are available, and the choice holds across restarts.',
+      "A new Show Organizer in Invites action lists the email domains whose organizers appear in calendar invites under their real address, even on event types that hide the organizer's email.",
     es_ES:
-      'Las instalaciones nuevas empiezan con todas las aplicaciones de Cal.diy desactivadas. Una nueva acción, Elegir aplicaciones habilitadas, decide qué aplicaciones están disponibles, y la elección se mantiene tras los reinicios.',
+      'Una nueva acción, Mostrar organizador en invitaciones, indica los dominios de correo cuyos organizadores aparecen en las invitaciones de calendario con su dirección real, incluso en los tipos de evento que ocultan el correo del organizador.',
     de_DE:
-      'Neue Installationen starten mit allen Cal.diy-Apps deaktiviert. Eine neue Aktion „Aktivierte Apps auswählen“ legt fest, welche Apps verfügbar sind, und die Auswahl bleibt über Neustarts hinweg erhalten.',
+      'Eine neue Aktion „Organisator in Einladungen anzeigen“ legt die E-Mail-Domains fest, deren Organisatoren in Kalendereinladungen mit ihrer echten Adresse erscheinen, auch bei Ereignistypen, die die E-Mail des Organisators ausblenden.',
     pl_PL:
-      'Nowe instalacje zaczynają z wyłączonymi wszystkimi aplikacjami Cal.diy. Nowa akcja „Wybierz włączone aplikacje” określa, które aplikacje są dostępne, a wybór zostaje zachowany po ponownym uruchomieniu.',
+      'Nowa akcja „Pokaż organizatora w zaproszeniach” określa domeny e-mail, których organizatorzy występują w zaproszeniach kalendarza pod prawdziwym adresem, także w typach wydarzeń ukrywających e-mail organizatora.',
     fr_FR:
-      'Les nouvelles installations démarrent avec toutes les applications de Cal.diy désactivées. Une nouvelle action, Choisir les applications activées, détermine les applications disponibles, et ce choix est conservé après un redémarrage.',
+      'Une nouvelle action, Afficher l’organisateur dans les invitations, liste les domaines de messagerie dont les organisateurs apparaissent dans les invitations d’agenda sous leur véritable adresse, même pour les types d’événements qui masquent l’e-mail de l’organisateur.',
   },
   migrations: {
     up: async ({ effects }) => {},

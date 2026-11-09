@@ -83,17 +83,18 @@ One model. It holds every secret the package generates and every choice the acti
 | ------------ | ------ | ----------------------- | ------------------------------------ |
 | `store.json` | JSON   | Yes — `FileHelper.json` | Install, every init, and the actions |
 
-| Key                     | Set by                                | Notes                                                      |
-| ----------------------- | ------------------------------------- | ---------------------------------------------------------- |
-| `postgresPassword`      | Install                               | The bundled database's password; also used to take backups |
-| `nextAuthSecret`        | Install                               | Session signing                                            |
-| `calendsoEncryptionKey` | Install                               | Application-level encryption of stored credentials         |
-| `cronApiKey`            | Install                               | Authenticates the cron sidecar to the job endpoints        |
-| `url`                   | Init, then the Set Primary URL action | The address every generated link is built from             |
-| `smtp`                  | The Configure SMTP action             | Either StartOS's system SMTP or credentials you supply     |
-| `stripe`                | The Configure Stripe action           | All four credentials, or disabled                          |
-| `signupDisabled`        | Install, then the signup action       | Defaults to **true**                                       |
-| `enabledApps`           | Install, then Choose Enabled Apps     | Defaults to none; unset on earlier installs                |
+| Key                           | Set by                                | Notes                                                      |
+| ----------------------------- | ------------------------------------- | ---------------------------------------------------------- |
+| `postgresPassword`            | Install                               | The bundled database's password; also used to take backups |
+| `nextAuthSecret`              | Install                               | Session signing                                            |
+| `calendsoEncryptionKey`       | Install                               | Application-level encryption of stored credentials         |
+| `cronApiKey`                  | Install                               | Authenticates the cron sidecar to the job endpoints        |
+| `url`                         | Init, then the Set Primary URL action | The address every generated link is built from             |
+| `smtp`                        | The Configure SMTP action             | Either StartOS's system SMTP or credentials you supply     |
+| `stripe`                      | The Configure Stripe action           | All four credentials, or disabled                          |
+| `signupDisabled`              | Install, then the signup action       | Defaults to **true**                                       |
+| `enabledApps`                 | Install, then Choose Enabled Apps     | Defaults to none; unset on earlier installs                |
+| `organizerEmailExemptDomains` | Show Organizer in Invites             | Defaults to none                                           |
 
 Later inits merge the file without disturbing any of it, so the secrets are stable for the life of the install. Nothing rewrites a value you set through an action.
 
@@ -140,7 +141,7 @@ The application's own first-run flow follows: open the Web UI and create the adm
 
 ## Actions
 
-Six actions, all user-facing.
+Seven actions, all user-facing.
 
 ### Set Primary URL
 
@@ -178,6 +179,15 @@ Chooses which apps Cal.diy offers in its app store; every other app is turned of
 - **Cost:** seconds, then a restart.
 - **Repeat safety:** idempotent; the form is pre-filled with the current choice, or with the apps currently enabled on an install that has never run it.
 - **Input:** one section per category — calendars, conferencing, CRM, messaging, automation, analytics, payments, other — each a checklist of the apps upstream registers there, except Stripe. An app is filed under its first category, with upstream's deprecated `video` counted as conferencing. Selecting an app that needs provider credentials makes it visible, not usable; it still needs those credentials.
+
+### Show Organizer in Invites
+
+Lists the email domains whose organizers keep their real address in calendar invites. On an event type with **Hide organizer's email** on, upstream writes the invite's organizer as `no-reply@cal.com`, so the organizer's own calendar treats the booking as someone else's meeting and asks them to accept it.
+
+- **What it changes:** `organizerEmailExemptDomains` in `store.json`, passed to upstream's `ORGANIZER_EMAIL_EXEMPT_DOMAINS` as `@<domain>` entries, so a domain matches exactly and not its subdomains.
+- **Cost:** seconds, then a restart.
+- **Repeat safety:** idempotent; an empty list restores upstream's behavior.
+- **Scope:** an exempt organizer's address appears in the invite attached to booking emails, and the event Cal.diy writes to their connected calendar keeps its attendees. Confirmation emails still carry no Reply-To and do not show the address.
 
 ### Enable / Disable Signups
 
@@ -294,6 +304,7 @@ startos_managed_env_vars:
   - CALCOM_TELEMETRY_DISABLED
   - NEXT_TELEMETRY_DISABLED
   - CSP_POLICY
+  - ORGANIZER_EMAIL_EXEMPT_DOMAINS
   - NODE_ENV
   - EMAIL_FROM # when SMTP is configured
   - EMAIL_FROM_NAME # when SMTP is configured
@@ -318,6 +329,7 @@ actions:
   - manage-smtp
   - manage-stripe
   - choose-apps # only-running
+  - invite-organizer-domains
   - toggle-signup
   - reset-password # only-running
 tasks:

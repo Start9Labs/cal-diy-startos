@@ -98,6 +98,11 @@ const dict = {
   Automation: 74,
   Analytics: 75,
   Other: 76,
+  // actions/inviteOrganizerDomains.ts
+  Domains: 77,
+  'An organizer whose email address is at one of these domains appears with that address in calendar invites.': 78,
+  'Show Organizer in Invites': 79,
+  'When an event type has "Hide organizer\'s email" on, Cal.diy lists the organizer in calendar invites as no-reply@cal.com, so the organizer\'s own calendar asks them to accept their own meeting. For organizers at the domains listed here, invites carry their real address instead. Confirmation emails still hide it. Saving restarts Cal.diy.': 80,
 } as const
 
 /**
