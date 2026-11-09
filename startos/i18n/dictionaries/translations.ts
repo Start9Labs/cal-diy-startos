@@ -75,6 +75,10 @@ export default {
     74: 'Automatización',
     75: 'Analítica',
     76: 'Otras',
+    77: 'Dominios',
+    78: 'Un organizador cuya dirección de correo pertenece a uno de estos dominios aparece con esa dirección en las invitaciones de calendario.',
+    79: 'Mostrar organizador en invitaciones',
+    80: 'Cuando un tipo de evento tiene activada la opción "Ocultar el correo del organizador", Cal.diy indica como organizador en las invitaciones de calendario a no-reply@cal.com, por lo que el propio calendario del organizador le pide aceptar su propia reunión. Para los organizadores de los dominios indicados aquí, las invitaciones llevan su dirección real. Los correos de confirmación la siguen ocultando. Guardar reinicia Cal.diy.',
   },
   de_DE: {
     0: 'Cal.diy wird gestartet!',
@@ -150,6 +154,10 @@ export default {
     74: 'Automatisierung',
     75: 'Analyse',
     76: 'Sonstige',
+    77: 'Domains',
+    78: 'Ein Organisator, dessen E-Mail-Adresse zu einer dieser Domains gehört, erscheint in Kalendereinladungen mit dieser Adresse.',
+    79: 'Organisator in Einladungen anzeigen',
+    80: 'Wenn bei einem Ereignistyp „E-Mail des Organisators ausblenden“ aktiviert ist, führt Cal.diy in Kalendereinladungen no-reply@cal.com als Organisator auf, sodass der eigene Kalender des Organisators ihn auffordert, sein eigenes Meeting anzunehmen. Für Organisatoren der hier aufgeführten Domains tragen Einladungen stattdessen ihre echte Adresse. Bestätigungs-E-Mails blenden sie weiterhin aus. Speichern startet Cal.diy neu.',
   },
   pl_PL: {
     0: 'Uruchamianie Cal.diy!',
@@ -225,6 +233,10 @@ export default {
     74: 'Automatyzacja',
     75: 'Analityka',
     76: 'Inne',
+    77: 'Domeny',
+    78: 'Organizator, którego adres e-mail należy do jednej z tych domen, występuje w zaproszeniach kalendarza pod tym adresem.',
+    79: 'Pokaż organizatora w zaproszeniach',
+    80: 'Gdy typ wydarzenia ma włączoną opcję „Ukryj e-mail organizatora”, Cal.diy podaje w zaproszeniach kalendarza jako organizatora no-reply@cal.com, więc własny kalendarz organizatora prosi go o zaakceptowanie jego własnego spotkania. Dla organizatorów z wymienionych tu domen zaproszenia zawierają ich prawdziwy adres. E-maile z potwierdzeniem nadal go ukrywają. Zapisanie uruchamia Cal.diy ponownie.',
   },
   fr_FR: {
     0: 'Démarrage de Cal.diy !',
@@ -300,5 +312,9 @@ export default {
     74: 'Automatisation',
     75: 'Analytique',
     76: 'Autres',
+    77: 'Domaines',
+    78: 'Un organisateur dont l’adresse e-mail appartient à l’un de ces domaines apparaît avec cette adresse dans les invitations d’agenda.',
+    79: 'Afficher l’organisateur dans les invitations',
+    80: 'Lorsqu’un type d’événement a l’option « Masquer l’e-mail de l’organisateur » activée, Cal.diy indique no-reply@cal.com comme organisateur dans les invitations d’agenda, si bien que l’agenda de l’organisateur lui demande d’accepter sa propre réunion. Pour les organisateurs des domaines listés ici, les invitations portent leur véritable adresse. Les e-mails de confirmation continuent de la masquer. L’enregistrement redémarre Cal.diy.',
   },
 } satisfies Record<string, LangDict>

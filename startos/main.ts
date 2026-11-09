@@ -190,6 +190,10 @@ exec crond -f -l 8
           BUILT_NEXT_PUBLIC_WEBAPP_URL: builtWebappUrl,
           NEXT_PUBLIC_DISABLE_SIGNUP: signupDisabled ? 'true' : '',
           ALLOWED_HOSTNAMES: allowedHostnames,
+          // Cal matches each entry as a suffix of the organizer's address
+          ORGANIZER_EMAIL_EXEMPT_DOMAINS: store.organizerEmailExemptDomains
+            .map((d) => `@${d}`)
+            .join(','),
           // Unset, upstream's tasker auth accepts `Bearer undefined`.
           CRON_SECRET: cronApiKey,
           CRON_API_KEY: cronApiKey,
