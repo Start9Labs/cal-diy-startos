@@ -5,6 +5,7 @@ You've installed Cal.diy — the community-driven, fully open-source edition of 
 ## Documentation
 
 - [Cal.com documentation](https://cal.com/docs) — the official feature documentation. Almost everything described there applies to Cal.diy, minus the Enterprise-only features that were removed.
+- [Cal.com help center](https://cal.com/help) — step-by-step guides to setting up event types, availability, bookings, workflows and integrations. Enterprise-only and cloud features it describes are not in Cal.diy.
 - [Cal.diy upstream repository](https://github.com/calcom/cal.diy) — source, issues, and discussions for the open-source fork.
 
 ## What you get on StartOS
